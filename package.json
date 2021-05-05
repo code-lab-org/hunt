@@ -19,7 +19,7 @@
     "express": "^4.17.1",
     "frontend-dependencies": "^1.1.8",
     "morgan": "^1.10.0",
-    "socket.io": "^2.4.0",
+    "socket.io": "^4.0.1",
     "validator": "^13.1.17"
   },
   "frontendDependencies": {
@@ -51,7 +51,7 @@
         "namespaced": true
       },
       "socket.io-client": {
-        "version": "^2.3.0",
+        "version": "^4.0.1",
         "src": "dist/",
         "namespaced": true
       }

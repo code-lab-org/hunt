@@ -40,7 +40,7 @@ $(function() {
     }
   });
 
-  var socket = io.connect();
+  var socket = io();
   $('#login').modal('toggle');
   $('#login').submit(function(e) {
       e.preventDefault();

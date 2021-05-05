@@ -1,6 +1,6 @@
 $(function() {
   var user = "";
-  var socket = io.connect();
+  var socket = io();
   var payoffs = {};
 
   function updatePoints(payoffs) {

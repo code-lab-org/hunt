@@ -21,8 +21,9 @@ $(function() {
     }
   }
 
-  $('#login').modal('toggle');
-  $('#login').submit(function(e) {
+  var loginModal = new bootstrap.Modal('#login');
+  loginModal.toggle();
+  $('#login').on('submit', function(e) {
       e.preventDefault();
       socket.emit('login-submit', {
         'user': $('#inputUser').val(),
@@ -36,7 +37,7 @@ $(function() {
       $('#info').text(user + ": " + 0);
       $('#nav-info').removeClass('d-none');
       $('#login-error').text();
-      $('#login').modal('toggle');
+      loginModal.toggle();
     } else {
       $('#login-error').text(data.message);
     }
@@ -52,11 +53,11 @@ $(function() {
   $('input[name=strategy],input[name=tool-hare],input[name=tool-stag]').on('change', function(e) {
     var strategy = $('input[name=strategy]:checked').val();
     if(strategy==='hare') {
-      $('.col-stag').removeClass('bg-light font-weight-bold');
-      $('.col-hare').addClass('bg-light font-weight-bold');
+      $('.col-stag').removeClass('bg-light fw-bold');
+      $('.col-hare').addClass('bg-light fw-bold');
     } else if(strategy==='stag') {
-      $('.col-hare').removeClass('bg-light font-weight-bold');
-      $('.col-stag').addClass('bg-light font-weight-bold');
+      $('.col-hare').removeClass('bg-light fw-bold');
+      $('.col-stag').addClass('bg-light fw-bold');
     }
     $('.col-stag').animate({opacity: strategy==='stag'?1.0:0.25});
     $('.col-hare').animate({opacity: strategy==='hare'?1.0:0.25});

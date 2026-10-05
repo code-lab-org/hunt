@@ -35,3 +35,7 @@ input::-webkit-inner-spin-button {
 input[type=number] {
   -moz-appearance: textfield;
 }
+.chart-trajectory {
+  position: relative;
+  height: min(75vw, 400px);
+}

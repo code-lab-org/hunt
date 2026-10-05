@@ -16,6 +16,10 @@ module.exports = function(io) {
 
   var probCollab = 0.5;
 
+  // credentials are escaped the same way as login input so they compare equal
+  var userPasscode = validator.escape(process.env.HUNT_USER_PASSCODE || 'attila');
+  var adminPassword = validator.escape(process.env.HUNT_ADMIN_PASSWORD || 'admin');
+
   function removeUser(userName) {
     // remove the user as anyone's partner
     Object.keys(users).forEach((i) => {
@@ -76,7 +80,7 @@ module.exports = function(io) {
       var userInput = validator.escape(data.user + '');
       var passcodeInput = validator.escape(data.passcode + '');
 
-      if(passcodeInput !== 'attila') {
+      if(passcodeInput !== userPasscode) {
         socket.emit('login-auth', {'user': userInput, 'success': false, 'message': 'Incorrect pass code'});
       } else {
         if(addUser(userInput, socket)) {
@@ -97,7 +101,7 @@ module.exports = function(io) {
           return;
       }
       var passwordInput = validator.escape(data.password + '');
-      if(passwordInput !== 'admin') {
+      if(passwordInput !== adminPassword) {
         socket.emit('login-auth', {'success': false, 'message': 'Incorrect password'});
       } else if(admin !== null) {
         socket.emit('login-auth', {'success': false, 'message': 'Already logged in'});

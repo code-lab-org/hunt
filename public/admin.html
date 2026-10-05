@@ -10,32 +10,34 @@
     <link href="stylesheets/style.css" rel="stylesheet">
   </head>
   <body>
-    <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
-      <a class="navbar-brand" href="#">The Hunt</a>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
+    <nav class="navbar navbar-expand-md bg-dark fixed-top" data-bs-theme="dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">The Hunt</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
 
-      <div class="collapse navbar-collapse" id="navbar">
-        <ul class="navbar-nav ml-auto">
-          <li class="nav-item" id="nav-login">
-            <a class="nav-link" href="#" data-toggle="modal" data-target="#login">Sign In</a>
-          </li>
-          <li class="nav-item text-light d-none" id="nav-info">
-            <span id="info"></span>
-          </li>
-        </ul>
+        <div class="collapse navbar-collapse" id="navbar">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item" id="nav-login">
+              <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#login">Sign In</a>
+            </li>
+            <li class="nav-item text-light d-none" id="nav-info">
+              <span id="info"></span>
+            </li>
+          </ul>
+        </div>
       </div>
     </nav>
-    <main role="main" class="container my-3 border-left border-right border-light">
+    <main role="main" class="container my-3 border-start border-end border-light">
       <div class="row">
         <div class="col-lg-4">
           <h3>Setup</h3>
           <form>
-            <div class="form-group row">
+            <div class="row mb-3">
               <label for="modeSelect" class="col-5 col-form-label">Points Mode:</label>
               <div class="col-7">
-                <select class="form-control" id="modeSelect">
+                <select class="form-select" id="modeSelect">
                   <option value="simple" selected>Simple</option>
                   <option value="complex">Complex</option>
                 </select>
@@ -85,16 +87,16 @@
                 <td><input class="form-control" type="number" id="D-SS" value="0" step="0.01"></td>
               </tr>
             </table>
-            <div class="form-group row">
+            <div class="row mb-3">
               <label for="probCollab" class="col-5 col-form-label">Robot P(Stag):</label>
               <div class="col-7">
                 <input class="form-control" type="number" min="0" max="1" step="0.01" id="probCollab">
               </div>
             </div>
-            <div class="form-group row">
+            <div class="row mb-3">
                 <label for="selectPartners" class="col-5 col-form-label">Partners:</label>
                 <div class="col-7">
-                  <select class="form-control" id="selectPartners">
+                  <select class="form-select" id="selectPartners">
                     <option value="random">Random Robot</option>
                     <option value="hidden">Paired (Hidden)</option>
                     <option value="paired">Paired</option>
@@ -102,8 +104,8 @@
                 </div>
             </div>
             <div class="text-center">
-              <button type="button" class="btn my-4 mr-4" id="reset-game">Reset Game</button>
-              <button type="button" class="btn btn-secondary my-4 mr-4" id="setup-partners">Setup</button>
+              <button type="button" class="btn my-4 me-4" id="reset-game">Reset Game</button>
+              <button type="button" class="btn btn-secondary my-4 me-4" id="setup-partners">Setup</button>
               <button type="button" class="btn btn-primary my-4" id="score-game">Score Game</button>
             </div>
           </form>
@@ -111,19 +113,25 @@
         <div class="col-lg-8">
           <ul class="nav nav-tabs" id="dashboard" role="tablist">
             <li class="nav-item">
-              <a class="nav-link active" id="scoreboard-tab" data-toggle="tab" href="#scoreboard" role="tab" aria-controls="scoreboard" aria-selected="true">Scoreboard</a>
+              <a class="nav-link active" id="scoreboard-tab" data-bs-toggle="tab" href="#scoreboard" role="tab" aria-controls="scoreboard" aria-selected="true">Scoreboard</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" id="plot1-tab" data-toggle="tab" href="#plotDecisions" role="tab" aria-controls="plotDecisions" aria-selected="false">Game Decisions</a>
+              <a class="nav-link" id="plot1-tab" data-bs-toggle="tab" href="#plotDecisions" role="tab" aria-controls="plotDecisions" aria-selected="false">Decisions</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" id="plot2-tab" data-toggle="tab" href="#plotOutcomes" role="tab" aria-controls="plotOutcomes" aria-selected="false">Game Outcomes</a>
+              <a class="nav-link" id="plot2-tab" data-bs-toggle="tab" href="#plotOutcomes" role="tab" aria-controls="plotOutcomes" aria-selected="false">Outcomes</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="plot3-tab" data-bs-toggle="tab" href="#plotDecisionTrajectory" role="tab" aria-controls="plotDecisionTrajectory" aria-selected="false">Decision Trajectory</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="plot4-tab" data-bs-toggle="tab" href="#plotOutcomeTrajectory" role="tab" aria-controls="plotOutcomeTrajectory" aria-selected="false">Outcome Trajectory</a>
             </li>
           </ul>
           <div class="tab-content" id="dashboard-content">
             <div class="tab-pane fade show active" id="scoreboard" role="tabpanel" aria-labelledby="scoreboard-tab">
               <table class="table table-striped">
-                <thead class="thead-dark">
+                <thead class="table-dark">
                   <th scope="col">#</th>
                   <th scope="col">User</th>
                   <th scope="col">Score</th>
@@ -137,6 +145,12 @@
             <div class="tab-pane fade" id="plotOutcomes" role="tabpanel" aria-labelledby="plot2-tab">
               <canvas id="chartOutcomes" width="100%"></canvas>
             </div>
+            <div class="tab-pane fade" id="plotDecisionTrajectory" role="tabpanel" aria-labelledby="plot3-tab">
+              <div class="chart-trajectory"><canvas id="chartDecisionTrajectory"></canvas></div>
+            </div>
+            <div class="tab-pane fade" id="plotOutcomeTrajectory" role="tabpanel" aria-labelledby="plot4-tab">
+              <div class="chart-trajectory"><canvas id="chartOutcomeTrajectory"></canvas></div>
+            </div>
           </div>
         </div>
       </div>
@@ -144,18 +158,18 @@
     <footer class="site-footer bg-light text-center border-top border-dark">
       <p><small class="text-muted">&copy; 2020 Collective Design Lab</small></p>
     </footer>
-    <div id="login" class="modal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div id="login" class="modal" tabindex="-1" role="dialog" data-bs-backdrop="static" data-bs-keyboard="false">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Log in</h5>
           </div>
-          <div class="model-body">
+          <div class="modal-body">
             <form class="form-login">
-              <label for="inputPassword" class="sr-only">Admin password</label>
-              <input type="password" id="inputPassword" class="form-control " placeholder="Admin password" required autofocus>
+              <label for="inputPassword" class="visually-hidden">Admin password</label>
+              <input type="password" id="inputPassword" class="form-control" placeholder="Admin password" required autofocus>
               <small id="login-error" class="form-text text-danger"></small>
-              <button class="btn btn-lg btn-primary btn-block" type="submit" id="login-submit">Sign in</button>
+              <button class="btn btn-lg btn-primary w-100" type="submit" id="login-submit">Sign in</button>
             </form>
           </div>
           <div class="modal-footer">
@@ -163,9 +177,8 @@
       </div>
     </div>
     <script src="scripts/jquery/dist/jquery.slim.min.js"></script>
-    <script src="scripts/popper.js/dist/umd/popper.min.js"></script>
-    <script src="scripts/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="scripts/chart.js/dist/Chart.bundle.min.js"></script>
+    <script src="scripts/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="scripts/chart.js/dist/chart.umd.min.js"></script>
     <script src="scripts/socket.io-client/dist/socket.io.js"></script>
     <script src="javascripts/admin.js"></script>
   </body>

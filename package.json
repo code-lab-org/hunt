@@ -29,27 +29,17 @@
     "target": "public/scripts/",
     "packages": {
       "bootstrap": {
-        "version": "^4.6.2",
-        "src": "dist/",
-        "namespaced": true
-      },
-      "popper.js": {
-        "version": "^1.16.1",
+        "version": "^5.3.8",
         "src": "dist/",
         "namespaced": true
       },
       "jquery": {
-        "version": "^3.7.1",
+        "version": "^4.0.0",
         "src": "dist/",
         "namespaced": true
       },
-      "open-iconic": {
-        "version": "^1.1.1",
-        "src": "font/",
-        "namespaced": true
-      },
       "chart.js": {
-        "version": "^2.9.4",
+        "version": "^4.5.1",
         "src": "dist/",
         "namespaced": true
       },

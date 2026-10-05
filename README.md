@@ -27,9 +27,12 @@ cp .env.example .env
 | `ACME_EMAIL` | yes | Email address Let's Encrypt uses for certificate expiry notices. |
 | `HUNT_ADMIN_PASSWORD` | yes | Password for the administrator interface. |
 | `HUNT_USER_PASSCODE` | yes | Pass code players enter to join the game. |
+| `HUNT_RECONNECT_SECONDS` | no | How long a disconnected player keeps their place and score so they can rejoin after a reload or dropped connection (default 120). |
 | `ACME_CA_SERVER` | no | Certificate authority URL. Set to `https://acme-staging-v02.api.letsencrypt.org/directory` while testing to avoid Let's Encrypt rate limits; remove it (and the `letsencrypt` volume) to switch to real certificates. |
 
 The `.env` file holds secrets: it is excluded from git and from the Docker image, so keep it only on the server.
+
+After 5 incorrect administrator passwords within a minute, sign-in from that address is blocked for a minute. The compose file sets `HUNT_TRUST_PROXY=true` so the application sees each client's address through Traefik; leave it unset if you expose the application without a proxy, since clients could otherwise forge their address.
 
 Start the application (Compose stops with an error naming any required variable that is missing):
 ```shell
@@ -71,13 +74,9 @@ To stop the application, run:
 
 ### Standalone Application
 
-Using this application as a standalone service requires [Node.js](https://nodejs.org/) (version 18 or newer) and native build tools. On Linux platforms, the following libraries are required:
+Using this application as a standalone service requires [Node.js](https://nodejs.org/) version 22 or newer (download it from [https://nodejs.org/en/](https://nodejs.org/en/) or use your platform's package manager).
 
-``nodejs``
-
-On Mac or Windows platforms, download and install from [https://nodejs.org/en/](https://nodejs.org/en/).
-
-Once the native dependencies are installed, install dependent libraries using the following command (from this directory):
+Install dependent libraries using the following command (from this directory):
 
 ``npm install``
 
@@ -88,6 +87,14 @@ Then initialize the application with the following command:
 The application will launch with a primary entry point of port 3000:
 
  * [http://localhost:3000](http://localhost:3000)
+
+## Testing
+
+After `npm install`, run the automated tests with:
+
+``npm test``
+
+They start the server on a free port and play games through it the way the player and administrator pages do. GitHub Actions runs them on every push and pull request, along with a check that the Docker image builds, starts and passes its health check.
 
  ## Acknowledgement
 

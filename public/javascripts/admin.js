@@ -132,6 +132,11 @@ $(function() {
     }
   });
 
+  function decode(text) {
+    // user names arrive HTML-escaped; decode them and insert as text only
+    return $('<textarea>').html(text).text();
+  }
+
   // running totals behind the cumulative charts, cleared on reset
   var totals = {'decisions': [0, 0], 'outcomes': [0, 0, 0, 0], 'count': 0};
   function percentages(counts, total) {
@@ -157,8 +162,7 @@ $(function() {
     users.forEach(function(user) {
       var dataset = chart.data.datasets.find(function(d) { return d.userId === user.id; });
       if(!dataset) {
-        // user names arrive HTML-escaped; decode them for the canvas
-        var name = $('<textarea>').html(user.user).text();
+        var name = decode(user.user);
         var reused = chart.data.datasets.filter(function(d) { return d.userName === name; }).length;
         dataset = lineDataset(reused ? name + ' (' + (reused + 1) + ')' : name, mutedLine);
         dataset.userId = user.id;
@@ -224,30 +228,120 @@ $(function() {
 
   var socket = io();
   var loginModal = new bootstrap.Modal('#login');
-  loginModal.toggle();
+  // the admin session token survives reloads within this tab
+  var adminToken = null;
+  var signedIn = false;
+  var replaced = false;
+  try {
+    adminToken = sessionStorage.getItem('hunt-admin-token');
+  } catch(e) {}
+  function saveToken(token) {
+    adminToken = token;
+    try {
+      if(token) {
+        sessionStorage.setItem('hunt-admin-token', token);
+      } else {
+        sessionStorage.removeItem('hunt-admin-token');
+      }
+    } catch(e) {}
+  }
+  function showLogin(message) {
+    signedIn = false;
+    setReady(false);
+    $('#nav-info').addClass('d-none');
+    $('#nav-login').removeClass('d-none');
+    $('#login-error').text(message || '');
+    loginModal.show();
+  }
+  // the server only accepts admin actions once this connection has signed in, so actions
+  // can't ride socket.io's reconnect buffer; setup changes made meanwhile are sent afterwards
+  var ready = false;
+  var pendingSetup = {};
+  function adminEmit(event, data) {
+    if(ready) {
+      socket.emit(event, data);
+    } else if(event === 'setup-payoffs' || event === 'setup-partners') {
+      pendingSetup[event] = data;
+    }
+  }
+  function setReady(value) {
+    ready = value;
+    $('#score-game, #execute-game, #reset-game, #export-results').prop('disabled', !value);
+    if(value) {
+      Object.keys(pendingSetup).forEach(function(event) {
+        socket.emit(event, pendingSetup[event]);
+      });
+      pendingSetup = {};
+    }
+  }
+  setReady(false);
   $('#login').on('submit', function(e) {
       e.preventDefault();
+      replaced = false;
       socket.emit('login-admin', {
         'password': $('#inputPassword').val()
       });
   });
+  socket.on('connect', function() {
+    // resume after a reload or dropped connection; otherwise ask for the password
+    if(adminToken && !replaced) {
+      socket.emit('resume-admin', {'token': adminToken});
+    } else if(!signedIn) {
+      showLogin();
+    }
+  });
+  socket.on('disconnect', function() {
+    setReady(false);
+    // the server cancels the players' countdown when the admin drops, so end the run too
+    if(execution) {
+      stopExecution();
+    }
+    if(signedIn) {
+      $('#connection-alert').removeClass('d-none');
+    }
+  });
   socket.on('login-auth', function(data) {
     if(data.success) {
+      signedIn = true;
+      saveToken(data.token);
+      setReady(true);
       $('#nav-login').addClass('d-none')
       $('#info').text('admin');
       $('#nav-info').removeClass('d-none');
-      $('#login-error').text();
-      loginModal.toggle();
+      $('#connection-alert').addClass('d-none');
+      $('#login-error').text('');
+      loginModal.hide();
     } else {
       $('#login-error').text(data.message);
     }
   });
+  socket.on('resume-failed', function() {
+    saveToken(null);
+    $('#connection-alert').addClass('d-none');
+    showLogin('Your session has expired. Please sign in again.');
+  });
+  socket.on('session-replaced', function() {
+    // the dashboard continues in another tab or window
+    replaced = true;
+    if(execution) {
+      stopExecution();
+    }
+    showLogin('The dashboard is open in another tab or window.');
+  });
+  // resetting can't be undone, so confirm first
   $('#reset-game').on('click', function(e) {
-    socket.emit('reset-game');
+    bootstrap.Modal.getOrCreateInstance('#reset').show();
+  });
+  $('#reset-confirm').on('click', function(e) {
+    bootstrap.Modal.getOrCreateInstance('#reset').hide();
+    if(execution) {
+      stopExecution();
+    }
+    adminEmit('reset-game');
     clearRounds();
   });
   $('#score-game').on('click', function(e) {
-    socket.emit('score-game');
+    adminEmit('score-game');
   });
   // score several rounds in a row, waiting between rounds
   document.getElementById('execute').addEventListener('shown.bs.modal', function() {
@@ -274,17 +368,22 @@ $(function() {
       'timer': null
     };
     $('#execute-game').attr('title', 'Stop remaining rounds');
+    // players see the same countdown
+    adminEmit('countdown', {'remaining': delay});
+    // a manual score would add an unplanned round to the run
+    $('#score-game').prop('disabled', true);
     tickExecution();
   });
   function tickExecution() {
     // score every round that is due, then wake at the next whole second of the countdown
     while(execution && Date.now() >= execution.nextAt) {
       execution.round += 1;
-      socket.emit('score-game');
+      adminEmit('score-game');
       if(execution.round >= execution.rounds) {
         stopExecution();
       } else {
         execution.nextAt = Date.now() + execution.delay;
+        adminEmit('countdown', {'remaining': execution.delay});
       }
     }
     if(!execution) {
@@ -301,6 +400,8 @@ $(function() {
   function stopExecution() {
     clearTimeout(execution.timer);
     execution = null;
+    adminEmit('countdown', {'remaining': 0});
+    $('#score-game').prop('disabled', !ready);
     $('#execute-game').removeAttr('title').text('Execute...');
   }
   // apply setup as soon as a value is committed (change fires on enter/blur, not every keystroke)
@@ -308,34 +409,52 @@ $(function() {
     updatePayoffs();
   });
   $('#selectPartners').on('change', function(e) {
-    socket.emit('setup-partners', {'mode': $(this).val()});
+    adminEmit('setup-partners', {'mode': $(this).val()});
     // re-pairing only matters when players are paired with each other
     $('#repair-partners').prop('disabled', $(this).val() === 'random');
   });
   // re-pair everyone, e.g. to include players who joined after pairing
   $('#repair-partners').on('click', function(e) {
-    socket.emit('setup-partners', {'mode': $('#selectPartners').val()});
+    adminEmit('setup-partners', {'mode': $('#selectPartners').val()});
   });
+  function validField(id, isValid) {
+    // highlight boxes the server would ignore; it keeps the last valid values
+    var value = $(id).val();
+    var valid = value !== '' && isValid(Number(value));
+    $(id).toggleClass('is-invalid', !valid);
+    return valid;
+  }
   function updatePayoffs() {
-    if($('#modeSelect').val() === 'simple') {
-      $('table.simple').show();
-      $('table.complex').hide();
-      var payoffs = [
+    var simple = $('#modeSelect').val() === 'simple';
+    $('table.simple').toggle(simple);
+    $('table.complex').toggle(!simple);
+    var ids = simple ? ['SS', 'SH', 'HS', 'HH']
+      : ['A', 'B', 'C', 'D'].flatMap(function(tool) {
+        return ['SS', 'SH', 'HS', 'HH'].map(function(cell) { return tool + '-' + cell; });
+      });
+    // check every box (not just up to the first bad one) so all are highlighted
+    var payoffsValid = ids.map(function(id) { return validField('#' + id, Number.isFinite); })
+      .every(Boolean);
+    var probValid = validField('#probCollab', function(p) { return p >= 0 && p <= 1; });
+    $('#payoff-error').toggleClass('d-none', payoffsValid);
+    var data = {};
+    if(payoffsValid && simple) {
+      data.payoffs = [
         [$('#SS').val(), $('#SH').val()],
         [$('#HS').val(), $('#HH').val()]
       ];
-      socket.emit('setup-payoffs', {'payoffs': payoffs, 'probCollab': $('#probCollab').val()});
-    } else {
-      $('table.simple').hide();
-      $('table.complex').show();
-      var payoffs = {
+    } else if(payoffsValid) {
+      data.payoffs = {
         "A": [[$('#A-SS').val(), $('#A-SH').val()], [$('#A-HS').val(), $('#A-HH').val()]],
         "B": [[$('#B-SS').val(), $('#B-SH').val()], [$('#B-HS').val(), $('#B-HH').val()]],
         "C": [[$('#C-SS').val(), $('#C-SH').val()], [$('#C-HS').val(), $('#C-HH').val()]],
         "D": [[$('#D-SS').val(), $('#D-SH').val()], [$('#D-HS').val(), $('#D-HH').val()]]
-      }
-      socket.emit('setup-payoffs', {'payoffs': payoffs, 'probCollab': $('#probCollab').val()});
+      };
     }
+    if(probValid) {
+      data.probCollab = $('#probCollab').val();
+    }
+    adminEmit('setup-payoffs', data);
   }
   $('#modeSelect').on('change', function(e) {
     if($(this).val() === 'simple') {
@@ -349,6 +468,9 @@ $(function() {
     }
   });
   socket.on('payoffs-changed', function(data) {
+    // values from the server are valid
+    $('table.simple input, table.complex input, #probCollab').removeClass('is-invalid');
+    $('#payoff-error').addClass('d-none');
     if(data.payoffs instanceof Array) {
       $('#modeSelect').val('simple');
       $('table.simple').show();
@@ -380,19 +502,59 @@ $(function() {
     }
     $('#probCollab').val(data.probCollab);
   });
-  socket.on('score-updated', function(data) {
-    $('#scoreboard table tbody').empty();
+  socket.on('players-updated', function(data) {
+    // everyone signed in, including players waiting to reconnect
+    var tbody = $('#scoreboard table tbody').empty();
+    data.users.forEach(function(player, i) {
+      var name = $('<td>').text(decode(player.user));
+      if(!player.connected) {
+        name.append(' ', $('<span class="badge text-bg-warning">').text('reconnecting'));
+      }
+      tbody.append($('<tr>').append(
+        $('<td>').text(i + 1),
+        name,
+        $('<td>').text(player.score.toLocaleString(undefined, { maximumFractionDigits: 2 }))
+      ));
+    });
+    var waiting = data.users.filter(function(player) { return !player.connected; }).length;
+    var connected = data.users.length - waiting;
+    $('#players-summary').text(data.users.length === 0 ? 'No players have joined yet.'
+      : connected + (connected === 1 ? ' player' : ' players') + ' connected'
+        + (waiting ? ' · ' + waiting + ' reconnecting' : ''));
+  });
+  // rounds since the last reset, sent when the dashboard signs in (e.g. after a reload)
+  socket.on('game-history', function(data) {
+    clearRounds();
+    data.rounds.forEach(addScoredRound);
+  });
+  socket.on('partners-changed', function(data) {
+    $('#selectPartners').val(data.mode);
+    $('#repair-partners').prop('disabled', data.mode === 'random');
+  });
+  $('#export-results').on('click', function(e) {
+    adminEmit('export-results');
+  });
+  socket.on('export-results', function(data) {
+    // the byte-order mark tells spreadsheet apps the file is UTF-8
+    var blob = new Blob(['﻿' + data.csv], {type: 'text/csv;charset=utf-8'});
+    var link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'hunt-results-' + new Date().toISOString().slice(0, 16).replace(/[T:]/g, '-') + '.csv';
+    link.click();
+    setTimeout(function() { URL.revokeObjectURL(link.href); }, 1000);
+  });
+  socket.on('score-updated', addScoredRound);
+  function addScoredRound(data) {
     if(data.users) {
       var strategy = [0, 0]; // S, H
       var outcomes = [[0, 0], [0, 0]] // SS, SH, HS, HH
       for(var i=0; i < data.users.length; i++) {
-        $('#scoreboard table tbody').append('<tr scope="row"><td>'+(i+1)+'</td><td>'+data.users[i].user+'</td><td>'+data.users[i].score+'</td></tr>');
         if(data.users[i].strategy) {
           strategy[data.users[i].strategy === 'stag' ? 0 : 1] += 1;
           outcomes[data.users[i].strategy === 'stag' ? 0 : 1][data.users[i].partnerStrategy === 'stag' ? 0 : 1] += 1;
         }
       }
-      // reset-game sends users without strategies, so only scored rounds extend the charts
+      // a round scored with no players doesn't extend the charts
       var total = strategy[0] + strategy[1];
       if(total > 0) {
         var outcomeCounts = [outcomes[0][0], outcomes[1][0], outcomes[1][1], outcomes[0][1]];
@@ -406,5 +568,5 @@ $(function() {
         addValueRound(data.round, data.users);
       }
     }
-  });
+  }
 });

@@ -92,3 +92,17 @@ table.complex .form-control {
 table.complex th {
   white-space: nowrap;
 }
+@keyframes flash {
+  from { background-color: #ffe08a; }
+  to { background-color: transparent; }
+}
+.flash {
+  animation: flash 2.5s ease-out;
+  border-radius: 0.25rem;
+}
+/* keep the red outline but drop the error icon, which would crowd the narrow payoff boxes */
+table.simple .form-control.is-invalid,
+table.complex .form-control.is-invalid {
+  background-image: none;
+  padding-right: 0.5rem;
+}

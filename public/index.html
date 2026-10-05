@@ -24,6 +24,16 @@
       </div>
     </nav>
     <main role="main" class="container my-3 border-start border-end border-light">
+      <div class="alert alert-warning d-none" id="connection-alert" role="status">
+        Connection lost. Reconnecting…
+      </div>
+      <div class="alert alert-primary d-flex align-items-center gap-2 py-2 d-none" id="round-countdown">
+        <span class="countdown" aria-hidden="true">
+          <span class="spinner-border"></span>
+          <span class="countdown-value" id="round-countdown-value"></span>
+        </span>
+        <span>Round <span id="round-countdown-round"></span> <span id="round-countdown-text"></span></span>
+      </div>
       <div class="row">
         <div class="col-lg-6">
           <form>
@@ -34,39 +44,40 @@
               </div>
             </div>
             <div class="row mb-3" id="payoff">
-              <label for="payoff" class="col-2 col-form-label">Points</label>
+              <span class="col-2 col-form-label">Points</span>
+              <span class="visually-hidden" role="status" id="points-status"></span>
               <div class="col-5 rounded col-stag" style="opacity: 0.25;">
                 <div class="row mb-3">
-                  <label for="SS" class="col-4 col-form-label">Stag:</label>
-                  <div class="col-8">
+                  <label for="SS" class="col-5 col-form-label">vs Stag:</label>
+                  <div class="col-7">
                     <input type="text" readonly class="form-control-plaintext" id="SS">
                   </div>
                 </div>
                 <div class="row mb-3">
-                  <label for="SH" class="col-4 col-form-label">Hare:</label>
-                  <div class="col-8">
+                  <label for="SH" class="col-5 col-form-label">vs Hare:</label>
+                  <div class="col-7">
                     <input type="text" readonly class="form-control-plaintext" id="SH">
                   </div>
                 </div>
               </div>
               <div class="col-5 rounded col-hare fw-bold bg-light">
                 <div class="row mb-3">
-                  <label for="HS" class="col-4 col-form-label">Stag:</label>
-                  <div class="col-8">
+                  <label for="HS" class="col-5 col-form-label">vs Stag:</label>
+                  <div class="col-7">
                     <input type="text" readonly class="form-control-plaintext" id="HS">
                   </div>
                 </div>
                 <div class="row mb-3">
-                  <label for="HH" class="col-4 col-form-label">Hare:</label>
-                  <div class="col-8">
+                  <label for="HH" class="col-5 col-form-label">vs Hare:</label>
+                  <div class="col-7">
                     <input type="text" readonly class="form-control-plaintext" id="HH">
                   </div>
                 </div>
               </div>
             </div>
             <div class="row mb-3" id="strategy">
-              <label for="strategy" class="col-2 col-form-label">Hunt</label>
-              <div class="col-10 btn-group" role="group">
+              <span class="col-2 col-form-label" id="strategy-label">Hunt</span>
+              <div class="col-10 btn-group" role="group" aria-labelledby="strategy-label">
                 <input type="radio" class="btn-check" name="strategy" id="strategy-stag" autocomplete="off" value="stag">
                 <label class="btn btn-lg btn-secondary" for="strategy-stag">Stag</label>
                 <input type="radio" class="btn-check" name="strategy" id="strategy-hare" autocomplete="off" value="hare" checked>
@@ -74,8 +85,8 @@
               </div>
             </div>
             <div class="row mb-3" style="display:none;" id="tool">
-              <label for="tool" class="col-2 col-form-label">Tool</label>
-              <div class="col-5 btn-group-vertical" role="group">
+              <span class="col-2 col-form-label" id="tool-label">Tool</span>
+              <div class="col-5 btn-group-vertical" role="group" aria-label="Tool when hunting stag">
                 <input type="radio" class="btn-check" name="tool-stag" id="tool-stag-A" autocomplete="off" value="A" checked>
                 <label class="btn btn-lg btn-light" for="tool-stag-A">Atlatl</label>
                 <input type="radio" class="btn-check" name="tool-stag" id="tool-stag-B" autocomplete="off" value="B">
@@ -85,7 +96,7 @@
                 <input type="radio" class="btn-check" name="tool-stag" id="tool-stag-D" autocomplete="off" value="D">
                 <label class="btn btn-lg btn-light" for="tool-stag-D">Dog</label>
               </div>
-              <div class="col-5 btn-group-vertical" role="group">
+              <div class="col-5 btn-group-vertical" role="group" aria-label="Tool when hunting hare">
                 <input type="radio" class="btn-check" name="tool-hare" id="tool-hare-A" autocomplete="off" value="A">
                 <label class="btn btn-lg btn-light" for="tool-hare-A">Atlatl</label>
                 <input type="radio" class="btn-check" name="tool-hare" id="tool-hare-B" autocomplete="off" value="B">
@@ -153,6 +164,7 @@
           </div>
           <div class="modal-footer">
           </div>
+        </div>
       </div>
     </div>
     <script src="scripts/jquery/dist/jquery.min.js"></script>

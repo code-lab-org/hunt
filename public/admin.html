@@ -30,6 +30,9 @@
       </div>
     </nav>
     <main role="main" class="container my-3 border-start border-end border-light">
+      <div class="alert alert-warning d-none" id="connection-alert" role="status">
+        Connection lost. Reconnecting…
+      </div>
       <div class="row">
         <div class="col-lg-4">
           <h3>Setup</h3>
@@ -45,52 +48,52 @@
             </div>
             <table class="table simple">
               <thead>
-                <tr><th>Partner</th><td></td><td></td></tr>
+                <tr><th scope="col">Partner</th><td></td><td></td></tr>
               </thead>
               <tbody>
                 <tr>
-                  <th>Stag</th>
+                  <th scope="row">Stag</th>
                   <td><input class="form-control" type="number" id="SS" value="4" step="0.01"></td>
                   <td><input class="form-control" type="number" id="HS" value="3" step="0.01"></td>
                 </tr>
                 <tr>
-                  <th>Hare</th>
+                  <th scope="row">Hare</th>
                   <td><input class="form-control" type="number" id="SH" value="0" step="0.01"></td>
                   <td><input class="form-control" type="number" id="HH" value="2" step="0.01"></td>
                 </tr>
               </tbody>
               <tfoot>
-                <tr><th>Player</th><th class="text-center">Stag</th><th class="text-center">Hare</th></tr>
+                <tr><th scope="row">Player</th><th scope="col" class="text-center">Stag</th><th scope="col" class="text-center">Hare</th></tr>
               </tfoot>
             </table>
             <table class="table complex" style="display:none;">
               <thead>
-                <tr><th>Tool</th><th>vs Stag</th><th>vs Hare</th><th>vs Stag</th><th>vs Hare</th></tr>
+                <tr><th scope="col">Tool</th><th scope="col">vs Stag</th><th scope="col">vs Hare</th><th scope="col">vs Stag</th><th scope="col">vs Hare</th></tr>
               </thead>
               <tbody>
                 <tr>
-                  <th>Atlatl</th>
+                  <th scope="row">Atlatl</th>
                   <td><input class="form-control" type="number" id="A-SS" value="4" step="0.01"></td>
                   <td><input class="form-control" type="number" id="A-SH" value="0" step="0.01"></td>
                   <td><input class="form-control" type="number" id="A-HS" value="0" step="0.01"></td>
                   <td><input class="form-control" type="number" id="A-HH" value="0" step="0.01"></td>
                 </tr>
                 <tr>
-                  <th>Bow</th>
+                  <th scope="row">Bow</th>
                   <td><input class="form-control" type="number" id="B-SS" value="3.5" step="0.01"></td>
                   <td><input class="form-control" type="number" id="B-SH" value="1.5" step="0.01"></td>
                   <td><input class="form-control" type="number" id="B-HS" value="1" step="0.01"></td>
                   <td><input class="form-control" type="number" id="B-HH" value="1" step="0.01"></td>
                 </tr>
                 <tr>
-                  <th>Club</th>
+                  <th scope="row">Club</th>
                   <td><input class="form-control" type="number" id="C-SS" value="3.25" step="0.01"></td>
                   <td><input class="form-control" type="number" id="C-SH" value="0.25" step="0.01"></td>
                   <td><input class="form-control" type="number" id="C-HS" value="1" step="0.01"></td>
                   <td><input class="form-control" type="number" id="C-HH" value="1" step="0.01"></td>
                 </tr>
                 <tr>
-                  <th>Dog</th>
+                  <th scope="row">Dog</th>
                   <td><input class="form-control" type="number" id="D-SS" value="0" step="0.01"></td>
                   <td><input class="form-control" type="number" id="D-SH" value="0" step="0.01"></td>
                   <td><input class="form-control" type="number" id="D-HS" value="3" step="0.01"></td>
@@ -98,13 +101,15 @@
                 </tr>
               </tbody>
               <tfoot>
-                <tr><th>Player</th><th colspan="2" class="text-center">Stag</th><th colspan="2" class="text-center">Hare</th></tr>
+                <tr><th scope="row">Player</th><th scope="colgroup" colspan="2" class="text-center">Stag</th><th scope="colgroup" colspan="2" class="text-center">Hare</th></tr>
               </tfoot>
             </table>
+            <p class="text-danger small d-none" id="payoff-error">Enter a number in each highlighted box. Players keep the last valid points until then.</p>
             <div class="row mb-3">
               <label for="probCollab" class="col-5 col-form-label">Robot P(Stag):</label>
               <div class="col-7">
                 <input class="form-control" type="number" min="0" max="1" step="0.01" id="probCollab">
+                <div class="invalid-feedback">Enter a probability from 0 to 1.</div>
               </div>
             </div>
             <div class="row mb-3">
@@ -151,11 +156,17 @@
           </ul>
           <div class="tab-content" id="dashboard-content">
             <div class="tab-pane fade show active" id="scoreboard" role="tabpanel" aria-labelledby="scoreboard-tab">
+              <div class="d-flex justify-content-between align-items-center my-2">
+                <p class="text-muted small mb-0" id="players-summary">No players have joined yet.</p>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="export-results" title="Every scored round since the server started">Download CSV</button>
+              </div>
               <table class="table table-striped">
                 <thead class="table-dark">
-                  <th scope="col">#</th>
-                  <th scope="col">User</th>
-                  <th scope="col">Score</th>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">User</th>
+                    <th scope="col">Score</th>
+                  </tr>
                 </thead>
                 <tbody></tbody>
               </table>
@@ -194,6 +205,22 @@
     <footer class="site-footer bg-light text-center border-top border-dark">
       <p><small class="text-muted">&copy; 2026 Collective Design Lab</small></p>
     </footer>
+    <div id="reset" class="modal fade" tabindex="-1" aria-labelledby="reset-title" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="reset-title">Reset game?</h5>
+          </div>
+          <div class="modal-body">
+            Every player's score goes back to 0 and all charts are cleared. This can't be undone.
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-danger" id="reset-confirm">Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
     <div id="execute" class="modal fade" tabindex="-1" aria-labelledby="execute-title" aria-hidden="true">
       <div class="modal-dialog">
         <form class="modal-content" id="execute-form">
@@ -230,13 +257,14 @@
           <div class="modal-body">
             <form class="form-login">
               <label for="inputPassword" class="visually-hidden">Admin password</label>
-              <input type="password" id="inputPassword" class="form-control" placeholder="Admin password" required autofocus>
+              <input type="password" id="inputPassword" autocomplete="current-password" class="form-control" placeholder="Admin password" required autofocus>
               <small id="login-error" class="form-text text-danger"></small>
               <button class="btn btn-lg btn-primary w-100" type="submit" id="login-submit">Sign in</button>
             </form>
           </div>
           <div class="modal-footer">
           </div>
+        </div>
       </div>
     </div>
     <script src="scripts/jquery/dist/jquery.slim.min.js"></script>

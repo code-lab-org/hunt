@@ -3,6 +3,23 @@ $(function() {
   var socket = io();
   var payoffs = {};
 
+  // the session (user name and resume token) survives reloads within this tab
+  var session = null;
+  var replaced = false;
+  try {
+    session = JSON.parse(sessionStorage.getItem('hunt-session'));
+  } catch(e) {}
+  function saveSession(value) {
+    session = value;
+    try {
+      if(value) {
+        sessionStorage.setItem('hunt-session', JSON.stringify(value));
+      } else {
+        sessionStorage.removeItem('hunt-session');
+      }
+    } catch(e) {}
+  }
+
   function updatePoints(payoffs) {
     if(payoffs instanceof Array) {
       $("#tool").hide();
@@ -22,25 +39,64 @@ $(function() {
   }
 
   var loginModal = new bootstrap.Modal('#login');
-  loginModal.toggle();
+  function showLogin(message) {
+    $('#login-error').text(message || '');
+    loginModal.show();
+  }
   $('#login').on('submit', function(e) {
       e.preventDefault();
+      replaced = false;
       socket.emit('login-submit', {
         'user': $('#inputUser').val(),
         'passcode': $('#inputPasscode').val()
       });
   });
+  socket.on('connect', function() {
+    // resume after a reload or dropped connection; otherwise ask the user to sign in
+    if(session && !replaced) {
+      socket.emit('resume', session);
+    } else if(!user) {
+      showLogin();
+    }
+  });
+  socket.on('disconnect', function() {
+    if(user) {
+      $('#connection-alert').removeClass('d-none');
+    }
+    showCountdown({'round': null, 'remaining': 0});
+  });
   socket.on('login-auth', function(data) {
     if(data.success) {
       user = data.user;
+      saveSession({'user': data.user, 'token': data.token});
       $('#nav-login').addClass('d-none')
-      $('#info').text(user + ": " + 0);
+      $('#info').text(decode(user) + ": " + formatPoints(data.score));
       $('#nav-info').removeClass('d-none');
-      $('#login-error').text();
-      loginModal.toggle();
+      $('#connection-alert').addClass('d-none');
+      $('#login-error').text('');
+      loginModal.hide();
+      // show the choice the server has for this user (it persists across reloads)
+      $('input[name=tool-' + data.strategy + '][value=' + data.design + ']').prop('checked', true);
+      $('#strategy-' + data.strategy).prop('checked', true).trigger('change');
     } else {
       $('#login-error').text(data.message);
     }
+  });
+  socket.on('resume-failed', function() {
+    user = '';
+    saveSession(null);
+    $('#connection-alert').addClass('d-none');
+    $('#nav-info').addClass('d-none');
+    $('#nav-login').removeClass('d-none');
+    showLogin('Your session has expired. Please sign in again.');
+  });
+  socket.on('session-replaced', function() {
+    // this game continues in another tab or window; stop playing here
+    replaced = true;
+    user = '';
+    $('#nav-info').addClass('d-none');
+    $('#nav-login').removeClass('d-none');
+    showLogin('You are playing in another tab or window.');
   });
   $('input[name=tool-stag]').on('change', function(e) {
     $('input[name=strategy][value=stag]').prop('checked', true).trigger('click');
@@ -71,9 +127,48 @@ $(function() {
     });
   });
   socket.on('payoffs-changed', function(data) {
+    var fields = ['#SS', '#SH', '#HS', '#HH'];
+    var before = fields.map(function(id) { return $(id).val(); });
+    // the first payoffs (sign-in or resume) aren't a change
+    var changed = Object.keys(payoffs).length > 0 && JSON.stringify(data.payoffs) !== JSON.stringify(payoffs);
     payoffs = data.payoffs;
     updatePoints(payoffs);
+    if(changed) {
+      // draw attention to points the admin changed mid-game
+      fields.forEach(function(id, i) {
+        if($(id).val() !== before[i]) {
+          $(id).removeClass('flash');
+          void $(id)[0].offsetWidth; // restart the animation
+          $(id).addClass('flash');
+        }
+      });
+      $('#points-status').text('').text('Points updated');
+    }
   });
+
+  // countdown to the next round while the admin runs several rounds
+  var countdownEndsAt = null;
+  var countdownTimer = null;
+  function showCountdown(data) {
+    clearInterval(countdownTimer);
+    if(!data.round) {
+      countdownEndsAt = null;
+      $('#round-countdown').addClass('d-none');
+      return;
+    }
+    countdownEndsAt = Date.now() + data.remaining;
+    $('#round-countdown-round').text(data.round);
+    $('#round-countdown').removeClass('d-none');
+    tickCountdown();
+    countdownTimer = setInterval(tickCountdown, 250);
+  }
+  function tickCountdown() {
+    var seconds = Math.max(0, Math.ceil((countdownEndsAt - Date.now()) / 1000));
+    $('#round-countdown-value').text(seconds);
+    $('#round-countdown-text').text(seconds > 0 ? 'scores in ' + seconds + (seconds === 1 ? ' second' : ' seconds') : 'is being scored');
+  }
+  socket.on('round-countdown', showCountdown);
+
   var toolNames = {'A': 'Atlatl', 'B': 'Bow', 'C': 'Club', 'D': 'Dog'};
   function decode(text) {
     // user names arrive HTML-escaped; decode them and insert as text only
@@ -90,7 +185,7 @@ $(function() {
     var partner = data.partnerLabel ? decode(data.partnerLabel) : '<Unknown>';
     return [choiceBadge(data.partnerStrategy), ' ', $('<small class="text-muted">').text(partner)];
   }
-  socket.on('score-updated', function(data) {
+  function showRound(data) {
     var points = (data.delta < 0 ? '' : '+') + formatPoints(data.delta);
     // latest round in the card, every round in the history table (newest first)
     $('#last-round-empty').addClass('d-none');
@@ -107,13 +202,31 @@ $(function() {
       $('<td class="text-end">').text(points),
       $('<td class="text-end">').text(formatPoints(data.score))
     ));
-    $('#info').text(user + ": " + data.score);
-  });
-  socket.on('score-reset', function(data) {
+    $('#info').text(decode(user) + ": " + formatPoints(data.score));
+  }
+  function showReset() {
     $('#last-round-body').addClass('d-none');
     $('#last-round-empty').removeClass('d-none').text('Score reset. Waiting for the next round.');
     $('#history tbody').prepend('<tr><td colspan="5" class="text-center text-muted small">Score reset</td></tr>');
-    $('#info').text(user + ": " + 0);
+    $('#info').text(decode(user) + ": " + 0);
+  }
+  socket.on('score-updated', function(data) {
+    showCountdown({'round': null, 'remaining': 0});
+    showRound(data);
+  });
+  socket.on('score-reset', showReset);
+  socket.on('score-history', function(data) {
+    // rebuild the summary after resuming (the page may have been reloaded)
+    $('#history tbody').empty();
+    $('#last-round-body').addClass('d-none');
+    $('#last-round-empty').removeClass('d-none').text('No rounds scored yet.');
+    data.history.forEach(function(entry) {
+      if(entry.reset) {
+        showReset();
+      } else {
+        showRound(entry);
+      }
+    });
   });
   socket.on('partner-updated', function(data) {
     if(data.partnerLabel) {

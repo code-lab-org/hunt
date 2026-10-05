@@ -27,6 +27,9 @@ services:
     environment:
       HUNT_ADMIN_PASSWORD: ${HUNT_ADMIN_PASSWORD:?set HUNT_ADMIN_PASSWORD in .env}
       HUNT_USER_PASSCODE: ${HUNT_USER_PASSCODE:?set HUNT_USER_PASSCODE in .env}
+      HUNT_RECONNECT_SECONDS: ${HUNT_RECONNECT_SECONDS:-120}
+      # client addresses come from Traefik's X-Forwarded-For (used to limit admin sign-in attempts)
+      HUNT_TRUST_PROXY: "true"
     labels:
       - traefik.enable=true
       - traefik.http.routers.hunt.rule=Host(`${HUNT_DOMAIN:?set HUNT_DOMAIN in .env}`)

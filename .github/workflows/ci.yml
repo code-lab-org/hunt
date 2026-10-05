@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22, 24]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build image
+        run: docker build -t hunt .
+      - name: Start container and wait for its health check
+        run: |
+          docker run -d --name hunt -p 3000:3000 hunt
+          for i in $(seq 1 30); do
+            status=$(docker inspect --format '{{.State.Health.Status}}' hunt)
+            [ "$status" = healthy ] && break
+            sleep 2
+          done
+          docker inspect --format '{{.State.Health.Status}}' hunt | grep -qx healthy
+          curl -fsS http://localhost:3000/admin.html > /dev/null
+          test "$(docker exec hunt whoami)" = node
+      - name: Show logs on failure
+        if: failure()
+        run: docker logs hunt
+      - name: Check the compose file
+        run: docker compose config -q
+        env:
+          HUNT_DOMAIN: hunt.example.com
+          ACME_EMAIL: admin@example.com
+          HUNT_ADMIN_PASSWORD: ci
+          HUNT_USER_PASSCODE: ci

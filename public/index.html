@@ -10,134 +10,165 @@
     <link href="stylesheets/style.css" rel="stylesheet">
   </head>
   <body>
-    <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
-      <a class="navbar-brand" href="#">The Hunt</a>
-      <ul class="navbar-nav ml-auto">
-        <li class="nav-item" id="nav-login">
-          <a class="nav-link" href="#" data-toggle="modal" data-target="#login">Sign In</a>
-        </li>
-        <li class="nav-item text-light d-none" id="nav-info">
-          <span id="info"></span>
-        </li>
-      </ul>
+    <nav class="navbar navbar-expand-md bg-dark fixed-top" data-bs-theme="dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">The Hunt</a>
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item" id="nav-login">
+            <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#login">Sign In</a>
+          </li>
+          <li class="nav-item text-light d-none" id="nav-info">
+            <span id="info"></span>
+          </li>
+        </ul>
+      </div>
     </nav>
-    <main role="main" class="container my-3 border-left border-right border-light">
+    <main role="main" class="container my-3 border-start border-end border-light">
+      <div class="alert alert-warning d-none" id="connection-alert" role="status">
+        Connection lost. Reconnecting…
+      </div>
+      <div class="alert alert-primary d-flex align-items-center gap-2 py-2 d-none" id="round-countdown">
+        <span class="countdown" aria-hidden="true">
+          <span class="spinner-border"></span>
+          <span class="countdown-value" id="round-countdown-value"></span>
+        </span>
+        <span>Round <span id="round-countdown-round"></span> <span id="round-countdown-text"></span></span>
+      </div>
       <div class="row">
         <div class="col-lg-6">
           <form>
-            <div class="form-group row">
+            <div class="row mb-3">
               <label for="partner" class="col-4 col-form-label">Paired with:</label>
               <div class="col-8">
                 <input type="text" readonly class="form-control-plaintext" id="partner" value="<Random Robot>">
               </div>
             </div>
-            <div class="form-group row" id="payoff">
-              <label for="payoff" class="col-2 col-form-label">Points</label>
+            <div class="row mb-3" id="payoff">
+              <span class="col-2 col-form-label">Points</span>
+              <span class="visually-hidden" role="status" id="points-status"></span>
               <div class="col-5 rounded col-stag" style="opacity: 0.25;">
-                <div class="form-group row">
-                  <label for="SS" class="col-4 col-form-label">Stag:</label>
-                  <div class="col-8">
+                <div class="row mb-3">
+                  <label for="SS" class="col-5 col-form-label">vs Stag:</label>
+                  <div class="col-7">
                     <input type="text" readonly class="form-control-plaintext" id="SS">
                   </div>
                 </div>
-                <div class="form-group row">
-                  <label for="SH" class="col-4 col-form-label">Hare:</label>
-                  <div class="col-8">
+                <div class="row mb-3">
+                  <label for="SH" class="col-5 col-form-label">vs Hare:</label>
+                  <div class="col-7">
                     <input type="text" readonly class="form-control-plaintext" id="SH">
                   </div>
                 </div>
               </div>
-              <div class="col-5 rounded col-hare font-weight-bold bg-light">
-                <div class="form-group row">
-                  <label for="HH" class="col-4 col-form-label">Hare:</label>
-                  <div class="col-8">
-                    <input type="text" readonly class="form-control-plaintext" id="HH">
-                  </div>
-                </div>
-                <div class="form-group row">
-                  <label for="HS" class="col-4 col-form-label">Stag:</label>
-                  <div class="col-8">
+              <div class="col-5 rounded col-hare fw-bold bg-light">
+                <div class="row mb-3">
+                  <label for="HS" class="col-5 col-form-label">vs Stag:</label>
+                  <div class="col-7">
                     <input type="text" readonly class="form-control-plaintext" id="HS">
                   </div>
                 </div>
+                <div class="row mb-3">
+                  <label for="HH" class="col-5 col-form-label">vs Hare:</label>
+                  <div class="col-7">
+                    <input type="text" readonly class="form-control-plaintext" id="HH">
+                  </div>
+                </div>
               </div>
             </div>
-            <div class="form-group row" id="strategy">
-              <label for="strategy" class="col-2 col-form-label">Hunt</label>
-              <div class="col-10 btn-group btn-group-toggle" data-toggle="buttons">
-                <label class="btn btn-lg btn-secondary">
-                  <input type="radio" class="btn-group-toggle" name="strategy" autocomplete="off" value="stag"> Stag
-                </label>
-                <label class="btn btn-lg btn-secondary active">
-                  <input type="radio" class="btn-group-toggle" name="strategy" autocomplete="off" value="hare" checked> Hare
-                </label>
+            <div class="row mb-3" id="strategy">
+              <span class="col-2 col-form-label" id="strategy-label">Hunt</span>
+              <div class="col-10 btn-group" role="group" aria-labelledby="strategy-label">
+                <input type="radio" class="btn-check" name="strategy" id="strategy-stag" autocomplete="off" value="stag">
+                <label class="btn btn-lg btn-secondary" for="strategy-stag">Stag</label>
+                <input type="radio" class="btn-check" name="strategy" id="strategy-hare" autocomplete="off" value="hare" checked>
+                <label class="btn btn-lg btn-secondary" for="strategy-hare">Hare</label>
               </div>
             </div>
-            <div class="form-group row" style="display:none;" id="tool">
-              <label for="tool" class="col-2 col-form-label">Tool</label>
-              <div class="col-5 btn-group-vertical btn-group-toggle" data-toggle="buttons">
-                <label class="btn btn-lg btn-light active">
-                  <input type="radio" class="btn-group-toggle" name="tool-stag" autocomplete="off" value="A" checked> Atlatl
-                </label>
-                <label class="btn btn-lg btn-light">
-                  <input type="radio" class="btn-group-toggle" name="tool-stag" autocomplete="off" value="B"> Bow
-                </label>
-                <label class="btn btn-lg btn-light">
-                  <input type="radio" class="btn-group-toggle" name="tool-stag" autocomplete="off" value="C"> Club
-                </label>
-                <label class="btn btn-lg btn-light">
-                  <input type="radio" class="btn-group-toggle" name="tool-stag" autocomplete="off" value="D"> Dog
-                </label>
+            <div class="row mb-3" style="display:none;" id="tool">
+              <span class="col-2 col-form-label" id="tool-label">Tool</span>
+              <div class="col-5 btn-group-vertical" role="group" aria-label="Tool when hunting stag">
+                <input type="radio" class="btn-check" name="tool-stag" id="tool-stag-A" autocomplete="off" value="A" checked>
+                <label class="btn btn-lg btn-light" for="tool-stag-A">Atlatl</label>
+                <input type="radio" class="btn-check" name="tool-stag" id="tool-stag-B" autocomplete="off" value="B">
+                <label class="btn btn-lg btn-light" for="tool-stag-B">Bow</label>
+                <input type="radio" class="btn-check" name="tool-stag" id="tool-stag-C" autocomplete="off" value="C">
+                <label class="btn btn-lg btn-light" for="tool-stag-C">Club</label>
+                <input type="radio" class="btn-check" name="tool-stag" id="tool-stag-D" autocomplete="off" value="D">
+                <label class="btn btn-lg btn-light" for="tool-stag-D">Dog</label>
               </div>
-              <div class="col-5 btn-group-vertical btn-group-toggle" data-toggle="buttons">
-                <label class="btn btn-lg btn-light">
-                  <input type="radio" class="btn-group-toggle" name="tool-hare" autocomplete="off" value="A"> Atlatl
-                </label>
-                <label class="btn btn-lg btn-light">
-                  <input type="radio" class="btn-group-toggle" name="tool-hare" autocomplete="off" value="B"> Bow
-                </label>
-                <label class="btn btn-lg btn-light">
-                  <input type="radio" class="btn-group-toggle" name="tool-hare" autocomplete="off" value="C"> Club
-                </label>
-                <label class="btn btn-lg btn-light active">
-                  <input type="radio" class="btn-group-toggle" name="tool-hare" autocomplete="off" value="D" checked> Dog
-                </label>
+              <div class="col-5 btn-group-vertical" role="group" aria-label="Tool when hunting hare">
+                <input type="radio" class="btn-check" name="tool-hare" id="tool-hare-A" autocomplete="off" value="A">
+                <label class="btn btn-lg btn-light" for="tool-hare-A">Atlatl</label>
+                <input type="radio" class="btn-check" name="tool-hare" id="tool-hare-B" autocomplete="off" value="B">
+                <label class="btn btn-lg btn-light" for="tool-hare-B">Bow</label>
+                <input type="radio" class="btn-check" name="tool-hare" id="tool-hare-C" autocomplete="off" value="C">
+                <label class="btn btn-lg btn-light" for="tool-hare-C">Club</label>
+                <input type="radio" class="btn-check" name="tool-hare" id="tool-hare-D" autocomplete="off" value="D" checked>
+                <label class="btn btn-lg btn-light" for="tool-hare-D">Dog</label>
               </div>
             </div>
           </form>
         </div>
         <div class="col-lg-6">
-          <label for="text-log">Log</label>
-          <textarea class="form-control" id="log" rows="20" disabled></textarea>
+          <div class="card mb-3" id="last-round" aria-live="polite">
+            <div class="card-body">
+              <p class="text-muted mb-0" id="last-round-empty">No rounds scored yet.</p>
+              <div class="d-none" id="last-round-body">
+                <h2 class="h6 text-muted mb-2" id="last-round-title"></h2>
+                <div class="d-flex flex-wrap column-gap-4 row-gap-1 mb-2">
+                  <div>You: <span id="last-round-you"></span></div>
+                  <div>Partner: <span id="last-round-partner"></span></div>
+                </div>
+                <div class="d-flex justify-content-between align-items-baseline">
+                  <span class="fs-4 fw-bold" id="last-round-points"></span>
+                  <span class="text-muted" id="last-round-total"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="history">
+            <table class="table table-sm align-middle mb-0" id="history">
+              <thead>
+                <tr>
+                  <th scope="col">Round</th>
+                  <th scope="col">You</th>
+                  <th scope="col">Partner</th>
+                  <th scope="col" class="text-end">Points</th>
+                  <th scope="col" class="text-end">Total</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </main>
     <footer class="site-footer bg-light text-center border-top border-dark">
-      <p><small class="text-muted">&copy; 2020 Collective Design Lab</small></p>
+      <p><small class="text-muted">&copy; 2026 Collective Design Lab</small></p>
     </footer>
-    <div id="login" class="modal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div id="login" class="modal" tabindex="-1" role="dialog" data-bs-backdrop="static" data-bs-keyboard="false">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Log in</h5>
           </div>
-          <div class="model-body">
+          <div class="modal-body">
             <form class="form-login">
-              <label for="inputUser" class="sr-only">User name</label>
+              <label for="inputUser" class="visually-hidden">User name</label>
               <input type="text" id="inputUser" class="form-control" placeholder="User name" required autofocus>
-              <label for="inputPasscode" class="sr-only">Pass code</label>
+              <label for="inputPasscode" class="visually-hidden">Pass code</label>
               <input type="text" id="inputPasscode" class="form-control" placeholder="Pass code" required>
               <small id="login-error" class="form-text text-danger"></small>
-              <button class="btn btn-lg btn-primary btn-block" type="submit" id="login-submit">Sign in</button>
+              <button class="btn btn-lg btn-primary w-100" type="submit" id="login-submit">Sign in</button>
             </form>
           </div>
           <div class="modal-footer">
           </div>
+        </div>
       </div>
     </div>
     <script src="scripts/jquery/dist/jquery.min.js"></script>
-    <script src="scripts/popper.js/dist/umd/popper.min.js"></script>
-    <script src="scripts/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script src="scripts/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="scripts/socket.io-client/dist/socket.io.js"></script>
     <script src="javascripts/client.js"></script>
   </body>

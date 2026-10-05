@@ -1,0 +1,42 @@
+# Production deployment: the hunt app behind a Traefik reverse proxy with
+# Let's Encrypt certificates. Configure with a .env file (see .env.example).
+services:
+  traefik:
+    image: traefik:v3.7
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:?set ACME_EMAIL in .env}
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+      - --certificatesresolvers.letsencrypt.acme.caserver=${ACME_CA_SERVER:-https://acme-v02.api.letsencrypt.org/directory}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+    restart: unless-stopped
+
+  hunt:
+    build: .
+    environment:
+      HUNT_ADMIN_PASSWORD: ${HUNT_ADMIN_PASSWORD:?set HUNT_ADMIN_PASSWORD in .env}
+      HUNT_USER_PASSCODE: ${HUNT_USER_PASSCODE:?set HUNT_USER_PASSCODE in .env}
+      HUNT_RECONNECT_SECONDS: ${HUNT_RECONNECT_SECONDS:-120}
+      # client addresses come from Traefik's X-Forwarded-For (used to limit admin sign-in attempts)
+      HUNT_TRUST_PROXY: "true"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.hunt.rule=Host(`${HUNT_DOMAIN:?set HUNT_DOMAIN in .env}`)
+      - traefik.http.routers.hunt.entrypoints=websecure
+      - traefik.http.routers.hunt.tls.certresolver=letsencrypt
+      - traefik.http.services.hunt.loadbalancer.server.port=3000
+    restart: unless-stopped
+
+volumes:
+  letsencrypt:

@@ -10,162 +10,266 @@
     <link href="stylesheets/style.css" rel="stylesheet">
   </head>
   <body>
-    <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
-      <a class="navbar-brand" href="#">The Hunt</a>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
+    <nav class="navbar navbar-expand-md bg-dark fixed-top" data-bs-theme="dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">The Hunt</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
 
-      <div class="collapse navbar-collapse" id="navbar">
-        <ul class="navbar-nav ml-auto">
-          <li class="nav-item" id="nav-login">
-            <a class="nav-link" href="#" data-toggle="modal" data-target="#login">Sign In</a>
-          </li>
-          <li class="nav-item text-light d-none" id="nav-info">
-            <span id="info"></span>
-          </li>
-        </ul>
+        <div class="collapse navbar-collapse" id="navbar">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item" id="nav-login">
+              <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#login">Sign In</a>
+            </li>
+            <li class="nav-item text-light d-none" id="nav-info">
+              <span id="info"></span>
+            </li>
+          </ul>
+        </div>
       </div>
     </nav>
-    <main role="main" class="container my-3 border-left border-right border-light">
+    <main role="main" class="container my-3 border-start border-end border-light">
+      <div class="alert alert-warning d-none" id="connection-alert" role="status">
+        Connection lost. Reconnecting…
+      </div>
       <div class="row">
         <div class="col-lg-4">
           <h3>Setup</h3>
           <form>
-            <div class="form-group row">
+            <div class="row mb-3">
               <label for="modeSelect" class="col-5 col-form-label">Points Mode:</label>
               <div class="col-7">
-                <select class="form-control" id="modeSelect">
+                <select class="form-select" id="modeSelect">
                   <option value="simple" selected>Simple</option>
                   <option value="complex">Complex</option>
                 </select>
               </div>
             </div>
             <table class="table simple">
-              <tr><th>&nbsp;</th><th>Hare</th><th>Stag</th></tr>
-              <tr>
-                <th>Hare</th>
-                <td><input class="form-control" type="number" id="HH" value="2" step="0.01"></td>
-                <td><input class="form-control" type="number" id="HS" value="3" step="0.01"></td>
-              </tr>
-              <tr>
-                <th>Stag</th>
-                <td><input class="form-control" type="number" id="SH" value="0" step="0.01"></td>
-                <td><input class="form-control" type="number" id="SS" value="4" step="0.01"></td>
-              </tr>
+              <thead>
+                <tr><th scope="col">Partner</th><td></td><td></td></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Stag</th>
+                  <td><input class="form-control" type="number" id="SS" value="4" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="HS" value="3" step="0.01"></td>
+                </tr>
+                <tr>
+                  <th scope="row">Hare</th>
+                  <td><input class="form-control" type="number" id="SH" value="0" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="HH" value="2" step="0.01"></td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr><th scope="row">Player</th><th scope="col" class="text-center">Stag</th><th scope="col" class="text-center">Hare</th></tr>
+              </tfoot>
             </table>
             <table class="table complex" style="display:none;">
-              <tr><th>&nbsp;</th><th>H/H</th><th>H/S</th><th>S/H</th><th>S/S</th></tr>
-              <tr>
-                <th>Atlatl</th>
-                <td><input class="form-control" type="number" id="A-HH" value="0" step="0.01"></td>
-                <td><input class="form-control" type="number" id="A-HS" value="0" step="0.01"></td>
-                <td><input class="form-control" type="number" id="A-SH" value="0" step="0.01"></td>
-                <td><input class="form-control" type="number" id="A-SS" value="4" step="0.01"></td>
-              </tr>
-              <tr>
-                <th>Bow</th>
-                <td><input class="form-control" type="number" id="B-HH" value="1" step="0.01"></td>
-                <td><input class="form-control" type="number" id="B-HS" value="1" step="0.01"></td>
-                <td><input class="form-control" type="number" id="B-SH" value="1.5" step="0.01"></td>
-                <td><input class="form-control" type="number" id="B-SS" value="3.5" step="0.01"></td>
-              </tr>
-              <tr>
-                <th>Club</th>
-                <td><input class="form-control" type="number" id="C-HH" value="1" step="0.01"></td>
-                <td><input class="form-control" type="number" id="C-HS" value="1" step="0.01"></td>
-                <td><input class="form-control" type="number" id="C-SH" value="0.25" step="0.01"></td>
-                <td><input class="form-control" type="number" id="C-SS" value="3.25" step="0.01"></td>
-              </tr>
-              <tr>
-                <th>Dog</th>
-                <td><input class="form-control" type="number" id="D-HH" value="2" step="0.01"></td>
-                <td><input class="form-control" type="number" id="D-HS" value="3" step="0.01"></td>
-                <td><input class="form-control" type="number" id="D-SH" value="0" step="0.01"></td>
-                <td><input class="form-control" type="number" id="D-SS" value="0" step="0.01"></td>
-              </tr>
+              <thead>
+                <tr><th scope="col">Tool</th><th scope="col">vs Stag</th><th scope="col">vs Hare</th><th scope="col">vs Stag</th><th scope="col">vs Hare</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Atlatl</th>
+                  <td><input class="form-control" type="number" id="A-SS" value="4" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="A-SH" value="0" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="A-HS" value="0" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="A-HH" value="0" step="0.01"></td>
+                </tr>
+                <tr>
+                  <th scope="row">Bow</th>
+                  <td><input class="form-control" type="number" id="B-SS" value="3.5" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="B-SH" value="1.5" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="B-HS" value="1" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="B-HH" value="1" step="0.01"></td>
+                </tr>
+                <tr>
+                  <th scope="row">Club</th>
+                  <td><input class="form-control" type="number" id="C-SS" value="3.25" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="C-SH" value="0.25" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="C-HS" value="1" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="C-HH" value="1" step="0.01"></td>
+                </tr>
+                <tr>
+                  <th scope="row">Dog</th>
+                  <td><input class="form-control" type="number" id="D-SS" value="0" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="D-SH" value="0" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="D-HS" value="3" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="D-HH" value="2" step="0.01"></td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr><th scope="row">Player</th><th scope="colgroup" colspan="2" class="text-center">Stag</th><th scope="colgroup" colspan="2" class="text-center">Hare</th></tr>
+              </tfoot>
             </table>
-            <div class="form-group row">
+            <p class="text-danger small d-none" id="payoff-error">Enter a number in each highlighted box. Players keep the last valid points until then.</p>
+            <div class="row mb-3">
               <label for="probCollab" class="col-5 col-form-label">Robot P(Stag):</label>
               <div class="col-7">
                 <input class="form-control" type="number" min="0" max="1" step="0.01" id="probCollab">
+                <div class="invalid-feedback">Enter a probability from 0 to 1.</div>
               </div>
             </div>
-            <div class="form-group row">
-                <label for="selectPartners" class="col-5 col-form-label">Partners:</label>
+            <div class="row mb-3">
+                <div class="col-5 d-flex align-items-center justify-content-between">
+                  <label for="selectPartners" class="col-form-label">Partners:</label>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="repair-partners" title="Re-pair players" aria-label="Re-pair players" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                      <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41m-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9"/>
+                      <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5 5 0 0 0 8 3M3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9z"/>
+                    </svg>
+                  </button>
+                </div>
                 <div class="col-7">
-                  <select class="form-control" id="selectPartners">
+                  <select class="form-select" id="selectPartners">
                     <option value="random">Random Robot</option>
                     <option value="hidden">Paired (Hidden)</option>
                     <option value="paired">Paired</option>
                   </select>
                 </div>
             </div>
-            <div class="text-center">
-              <button type="button" class="btn my-4 mr-4" id="reset-game">Reset Game</button>
-              <button type="button" class="btn btn-secondary my-4 mr-4" id="setup-partners">Setup</button>
-              <button type="button" class="btn btn-primary my-4" id="score-game">Score Game</button>
+            <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 my-4">
+              <button type="button" class="btn btn-danger" id="reset-game">Reset Game</button>
+              <div class="btn-group" role="group">
+                <button type="button" class="btn btn-primary" id="score-game">Score Game</button>
+                <button type="button" class="btn btn-outline-primary" id="execute-game">Execute...</button>
+              </div>
             </div>
           </form>
         </div>
         <div class="col-lg-8">
           <ul class="nav nav-tabs" id="dashboard" role="tablist">
             <li class="nav-item">
-              <a class="nav-link active" id="scoreboard-tab" data-toggle="tab" href="#scoreboard" role="tab" aria-controls="scoreboard" aria-selected="true">Scoreboard</a>
+              <a class="nav-link active" id="scoreboard-tab" data-bs-toggle="tab" href="#scoreboard" role="tab" aria-controls="scoreboard" aria-selected="true">Scoreboard</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" id="plot1-tab" data-toggle="tab" href="#plotDecisions" role="tab" aria-controls="plotDecisions" aria-selected="false">Game Decisions</a>
+              <a class="nav-link" id="decisions-tab" data-bs-toggle="tab" href="#decisions" role="tab" aria-controls="decisions" aria-selected="false">Decisions</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" id="plot2-tab" data-toggle="tab" href="#plotOutcomes" role="tab" aria-controls="plotOutcomes" aria-selected="false">Game Outcomes</a>
+              <a class="nav-link" id="outcomes-tab" data-bs-toggle="tab" href="#outcomes" role="tab" aria-controls="outcomes" aria-selected="false">Outcomes</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="cumulative-value-tab" data-bs-toggle="tab" href="#cumulative-value" role="tab" aria-controls="cumulative-value" aria-selected="false">Cumulative Value</a>
             </li>
           </ul>
           <div class="tab-content" id="dashboard-content">
             <div class="tab-pane fade show active" id="scoreboard" role="tabpanel" aria-labelledby="scoreboard-tab">
+              <div class="d-flex justify-content-between align-items-center my-2">
+                <p class="text-muted small mb-0" id="players-summary">No players have joined yet.</p>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="export-results" title="Every scored round since the server started">Download CSV</button>
+              </div>
               <table class="table table-striped">
-                <thead class="thead-dark">
-                  <th scope="col">#</th>
-                  <th scope="col">User</th>
-                  <th scope="col">Score</th>
+                <thead class="table-dark">
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">User</th>
+                    <th scope="col">Score</th>
+                  </tr>
                 </thead>
                 <tbody></tbody>
               </table>
             </div>
-            <div class="tab-pane fade" id="plotDecisions" role="tabpanel" aria-labelledby="plot1-tab">
-              <canvas id="chartDecisions" width="100%"></canvas>
+            <div class="tab-pane fade" id="decisions" role="tabpanel" aria-labelledby="decisions-tab">
+              <div class="d-flex justify-content-end my-2">
+                <div class="btn-group btn-group-sm" role="group" aria-label="Decision values">
+                  <input type="radio" class="btn-check" name="decisions-view" id="decisions-round" value="round" autocomplete="off" checked>
+                  <label class="btn btn-outline-secondary" for="decisions-round">Per round</label>
+                  <input type="radio" class="btn-check" name="decisions-view" id="decisions-cumulative" value="cumulative" autocomplete="off">
+                  <label class="btn btn-outline-secondary" for="decisions-cumulative">Cumulative</label>
+                </div>
+              </div>
+              <div class="chart-trajectory" data-view="round"><canvas id="chartDecisionTrajectory"></canvas></div>
+              <div class="chart-trajectory d-none" data-view="cumulative"><canvas id="chartCumulativeDecisions"></canvas></div>
             </div>
-            <div class="tab-pane fade" id="plotOutcomes" role="tabpanel" aria-labelledby="plot2-tab">
-              <canvas id="chartOutcomes" width="100%"></canvas>
+            <div class="tab-pane fade" id="outcomes" role="tabpanel" aria-labelledby="outcomes-tab">
+              <div class="d-flex justify-content-end my-2">
+                <div class="btn-group btn-group-sm" role="group" aria-label="Outcome values">
+                  <input type="radio" class="btn-check" name="outcomes-view" id="outcomes-round" value="round" autocomplete="off" checked>
+                  <label class="btn btn-outline-secondary" for="outcomes-round">Per round</label>
+                  <input type="radio" class="btn-check" name="outcomes-view" id="outcomes-cumulative" value="cumulative" autocomplete="off">
+                  <label class="btn btn-outline-secondary" for="outcomes-cumulative">Cumulative</label>
+                </div>
+              </div>
+              <div class="chart-trajectory" data-view="round"><canvas id="chartOutcomeTrajectory"></canvas></div>
+              <div class="chart-trajectory d-none" data-view="cumulative"><canvas id="chartCumulativeOutcomes"></canvas></div>
+            </div>
+            <div class="tab-pane fade" id="cumulative-value" role="tabpanel" aria-labelledby="cumulative-value-tab">
+              <div class="chart-trajectory"><canvas id="chartCumulativeValue"></canvas></div>
             </div>
           </div>
         </div>
       </div>
     </main>
     <footer class="site-footer bg-light text-center border-top border-dark">
-      <p><small class="text-muted">&copy; 2020 Collective Design Lab</small></p>
+      <p><small class="text-muted">&copy; 2026 Collective Design Lab</small></p>
     </footer>
-    <div id="login" class="modal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div id="reset" class="modal fade" tabindex="-1" aria-labelledby="reset-title" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="reset-title">Reset game?</h5>
+          </div>
+          <div class="modal-body">
+            Every player's score goes back to 0 and all charts are cleared. This can't be undone.
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-danger" id="reset-confirm">Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="execute" class="modal fade" tabindex="-1" aria-labelledby="execute-title" aria-hidden="true">
+      <div class="modal-dialog">
+        <form class="modal-content" id="execute-form">
+          <div class="modal-header">
+            <h5 class="modal-title" id="execute-title">Execute Rounds</h5>
+          </div>
+          <div class="modal-body">
+            <div class="row mb-3">
+              <label for="executeRounds" class="col-7 col-form-label">Number of rounds:</label>
+              <div class="col-5">
+                <input class="form-control" type="number" id="executeRounds" min="1" step="1" value="10" required>
+              </div>
+            </div>
+            <div class="row">
+              <label for="executeDelay" class="col-7 col-form-label">Seconds between rounds:</label>
+              <div class="col-5">
+                <input class="form-control" type="number" id="executeDelay" min="0" step="any" value="3" required>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Run</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div id="login" class="modal" tabindex="-1" role="dialog" data-bs-backdrop="static" data-bs-keyboard="false">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Log in</h5>
           </div>
-          <div class="model-body">
+          <div class="modal-body">
             <form class="form-login">
-              <label for="inputPassword" class="sr-only">Admin password</label>
-              <input type="password" id="inputPassword" class="form-control " placeholder="Admin password" required autofocus>
+              <label for="inputPassword" class="visually-hidden">Admin password</label>
+              <input type="password" id="inputPassword" autocomplete="current-password" class="form-control" placeholder="Admin password" required autofocus>
               <small id="login-error" class="form-text text-danger"></small>
-              <button class="btn btn-lg btn-primary btn-block" type="submit" id="login-submit">Sign in</button>
+              <button class="btn btn-lg btn-primary w-100" type="submit" id="login-submit">Sign in</button>
             </form>
           </div>
           <div class="modal-footer">
           </div>
+        </div>
       </div>
     </div>
     <script src="scripts/jquery/dist/jquery.slim.min.js"></script>
-    <script src="scripts/popper.js/dist/umd/popper.min.js"></script>
-    <script src="scripts/bootstrap/dist/js/bootstrap.min.js"></script>
-    <script src="scripts/chart.js/dist/Chart.bundle.min.js"></script>
+    <script src="scripts/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="scripts/chart.js/dist/chart.umd.min.js"></script>
     <script src="scripts/socket.io-client/dist/socket.io.js"></script>
     <script src="javascripts/admin.js"></script>
   </body>

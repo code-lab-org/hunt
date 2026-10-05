@@ -13,20 +13,23 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node ./bin/www"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "cookie-parser": "^1.4.7",
-    "debug": "^4.2.0",
-    "express": "^4.22.1",
-    "frontend-dependencies": "^2.0.0",
-    "morgan": "^1.10.1",
-    "socket.io": "^4.0.1",
-    "validator": "^13.15.22"
+    "debug": "^4.4.3",
+    "express": "^5.2.1",
+    "frontend-dependencies": "^2.0.3",
+    "morgan": "^1.12.1",
+    "socket.io": "^4.8.4",
+    "validator": "^13.15.35"
   },
   "frontendDependencies": {
     "target": "public/scripts/",
     "packages": {
       "bootstrap": {
-        "version": "^4.5.3",
+        "version": "^4.6.2",
         "src": "dist/",
         "namespaced": true
       },
@@ -36,7 +39,7 @@
         "namespaced": true
       },
       "jquery": {
-        "version": "^3.3.1",
+        "version": "^3.7.1",
         "src": "dist/",
         "namespaced": true
       },
@@ -46,12 +49,12 @@
         "namespaced": true
       },
       "chart.js": {
-        "version": "^2.7.3",
+        "version": "^2.9.4",
         "src": "dist/",
         "namespaced": true
       },
       "socket.io-client": {
-        "version": "^4.0.1",
+        "version": "^4.8.4",
         "src": "dist/",
         "namespaced": true
       }

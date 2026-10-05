@@ -1,5 +1,16 @@
 var crypto = require('crypto');
 var validator = require('validator');
+var { RegExpMatcher, englishDataset, englishRecommendedTransformers } = require('obscenity');
+
+// basic profanity filter for user names; the recommended transformers catch
+// look-alike spellings (e.g. "sh1t") without flagging words like "Scunthorpe"
+var profanity = new RegExpMatcher({...englishDataset.build(), ...englishRecommendedTransformers});
+function isProfane(name) {
+  // also catch words spelled out with separators, e.g. "f.u.c.k" or "s h i t"
+  var parts = name.split(/[\s._*\-]+/).filter(Boolean);
+  var spelled = parts.length > 1 && parts.every(part => part.length === 1) ? parts.join('') : null;
+  return profanity.hasMatch(name) || (spelled !== null && profanity.hasMatch(spelled));
+}
 
 module.exports = function(io) {
   var admin = null;
@@ -159,6 +170,8 @@ module.exports = function(io) {
 
       if(passcodeInput !== userPasscode) {
         socket.emit('login-auth', {'user': userInput, 'success': false, 'message': 'Incorrect pass code'});
+      } else if(isProfane(data.user + '')) {
+        socket.emit('login-auth', {'user': userInput, 'success': false, 'message': 'Please choose a different name'});
       } else {
         if(addUser(userInput, socket)) {
           user = userInput;

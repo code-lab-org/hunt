@@ -21,6 +21,7 @@
     "express": "^5.2.1",
     "frontend-dependencies": "^2.0.3",
     "morgan": "^1.12.1",
+    "obscenity": "^0.4.6",
     "socket.io": "^4.8.4",
     "validator": "^13.15.35"
   },

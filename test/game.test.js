@@ -24,9 +24,24 @@ test('players sign in with the pass code and a unique name', async () => {
   bob = escaped.socket;
 });
 
+test('profane names are refused, without catching innocent ones', async () => {
+  for (const name of ['fuck', 'Sh1tHead', 'f.u.c.k', 's h i t']) {
+    const { socket, auth } = await signInPlayer(app, name);
+    assert.strictEqual(auth.message, 'Please choose a different name', name);
+    socket.disconnect();
+  }
+  for (const name of ['Scunthorpe', 'Cassandra', 'Dickens', 'J. R. R.']) {
+    const { socket, auth } = await signInPlayer(app, name);
+    assert.ok(auth.success, name);
+    socket.disconnect();
+  }
+  await sleep(100);
+});
+
 test('the admin sees players as they join', async () => {
   await sleep(100);
-  assert.deepStrictEqual(players.map((p) => p.user + ':' + p.connected).sort(), ['&lt;bob&gt;:true', 'alice:true']);
+  // (players from the name-filter test have left and are held as reconnecting)
+  assert.deepStrictEqual(players.filter((p) => p.connected).map((p) => p.user).sort(), ['&lt;bob&gt;', 'alice']);
 });
 
 test('only the signed-in admin can sign in as admin', async () => {

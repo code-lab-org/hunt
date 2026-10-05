@@ -41,7 +41,7 @@ To stop the application, run:
 
 ### Standalone Application
 
-Using this application as a standalone service requires [Node.js](https://nodejs.org/) and native build tools. On Linux platforms, the following libraries are required:
+Using this application as a standalone service requires [Node.js](https://nodejs.org/) (version 18 or newer) and native build tools. On Linux platforms, the following libraries are required:
 
 ``nodejs``
 

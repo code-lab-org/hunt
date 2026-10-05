@@ -191,6 +191,57 @@ $(function() {
   $('#score-game').on('click', function(e) {
     socket.emit('score-game');
   });
+  // score several rounds in a row, waiting between rounds
+  document.getElementById('execute').addEventListener('shown.bs.modal', function() {
+    $('#executeRounds').trigger('focus');
+  });
+  var execution = null; // {rounds, delay, round, nextAt, timer} while running
+  $('#execute-game').on('click', function(e) {
+    if(execution) {
+      stopExecution();
+    } else {
+      bootstrap.Modal.getOrCreateInstance('#execute').show();
+    }
+  });
+  $('#execute-form').on('submit', function(e) {
+    e.preventDefault();
+    bootstrap.Modal.getOrCreateInstance('#execute').hide();
+    execution = {
+      'rounds': parseInt($('#executeRounds').val(), 10),
+      'delay': Number.parseFloat($('#executeDelay').val()) * 1000,
+      'round': 0,
+      'nextAt': Date.now(),
+      'timer': null
+    };
+    $('#execute-game').attr('title', 'Stop remaining rounds');
+    tickExecution();
+  });
+  function tickExecution() {
+    // score every round that is due, then wake at the next whole second of the countdown
+    while(execution && Date.now() >= execution.nextAt) {
+      execution.round += 1;
+      socket.emit('score-game');
+      if(execution.round >= execution.rounds) {
+        stopExecution();
+      } else {
+        execution.nextAt = Date.now() + execution.delay;
+      }
+    }
+    if(!execution) {
+      return;
+    }
+    var remaining = execution.nextAt - Date.now();
+    $('#execute-game').html('<span class="countdown" aria-hidden="true">'
+      + '<span class="spinner-border"></span>'
+      + '<span class="countdown-value">' + Math.ceil(remaining / 1000) + '</span></span> '
+      + '<span role="status">Round ' + execution.round + ' of ' + execution.rounds + '</span>');
+    execution.timer = setTimeout(tickExecution, remaining % 1000 || 1000);
+  }
+  function stopExecution() {
+    clearTimeout(execution.timer);
+    execution = null;
+    $('#execute-game').removeAttr('title').text('Execute...');
+  }
   $('#setup-partners').on('click', function(e) {
     updatePayoffs();
     socket.emit('setup-partners', {'mode': $('#selectPartners option:selected').val()});

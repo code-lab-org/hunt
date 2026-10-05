@@ -4,66 +4,28 @@ $(function() {
     'stag': '#2a78d6', 'hare': '#eb6834',
     'SS': '#2a78d6', 'HS': '#eb6834', 'HH': '#1baf7a', 'SH': '#eda100'
   };
+  // users take these in order of first appearance; with more users all lines turn gray
+  var userColors = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948'];
+  var mutedLine = '#c3c2b7';
   Chart.defaults.font.family = $('body').css('font-family');
   Chart.defaults.color = '#52514e';
   Chart.defaults.borderColor = '#e1e0d9';
 
-  var ctx = document.getElementById('chartDecisions').getContext('2d');
-  var chartDecisions = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: ['Stag', 'Hare'],
-        datasets: [{
-            label: '# Decisions',
-            data: [0, 0],
-            backgroundColor: [colors.stag, colors.hare],
-            borderRadius: 4
-        }]
-    },
-    options: {
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: { precision: 0 }
-            }
-        },
-        plugins: { legend: { display: false } }
-    }
-  });
-  var ctx = document.getElementById('chartOutcomes').getContext('2d');
-  var chartOutcomes = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: ['Stag / Stag', 'Hare / Stag', 'Hare / Hare', 'Stag / Hare' ],
-        datasets: [{
-            label: '# Outcomes',
-            data: [0, 0, 0, 0],
-            backgroundColor: [colors.SS, colors.HS, colors.HH, colors.SH],
-            borderRadius: 4
-        }]
-    },
-    options: {
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: { precision: 0 }
-            }
-        },
-        plugins: { legend: { display: false } }
-    }
-  });
-
   // label each line at its last point, nudged apart so labels never overlap
   var endLabels = {
     id: 'endLabels',
-    afterDatasetsDraw: function(chart) {
+    afterDatasetsDraw: function(chart, args, options) {
+      if(options.display === false) {
+        return;
+      }
       var labels = chart.data.datasets.map(function(dataset, i) {
-        var points = chart.getDatasetMeta(i).data;
-        var last = points[points.length - 1];
-        if(!last || !chart.isDatasetVisible(i)) {
+        // only lines that reach the latest round are labeled; the legend names the rest
+        var last = dataset.data.length - 1;
+        var point = chart.getDatasetMeta(i).data[last];
+        if(!point || dataset.data[last] === null || !chart.isDatasetVisible(i)) {
           return null;
         }
-        return {'text': dataset.label, 'color': dataset.borderColor, 'x': last.x, 'y': last.y};
+        return {'text': dataset.label, 'color': dataset.borderColor, 'x': point.x, 'y': point.y};
       }).filter(Boolean).sort(function(a, b) { return a.y - b.y; });
       var lineHeight = 15;
       for(var i = 1; i < labels.length; i++) {
@@ -87,25 +49,26 @@ $(function() {
     }
   };
 
-  function trajectoryChart(id, yTitle, series) {
+  function lineDataset(label, color) {
+    return {
+      label: label,
+      data: [],
+      borderColor: color,
+      backgroundColor: color,
+      borderWidth: 2,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      pointBorderColor: '#ffffff',
+      pointBorderWidth: 2,
+      clip: 8
+    };
+  }
+  function lineChart(id, yTitle, datasets, percent, plugin) {
     return new Chart(document.getElementById(id).getContext('2d'), {
       type: 'line',
       data: {
           labels: [],
-          datasets: series.map(function(s) {
-            return {
-              label: s.label,
-              data: [],
-              borderColor: colors[s.key],
-              backgroundColor: colors[s.key],
-              borderWidth: 2,
-              pointRadius: 4,
-              pointHoverRadius: 6,
-              pointBorderColor: '#ffffff',
-              pointBorderWidth: 2,
-              clip: 8
-            };
-          })
+          datasets: datasets
       },
       options: {
           maintainAspectRatio: false,
@@ -116,7 +79,7 @@ $(function() {
                   title: { display: true, text: 'Round' },
                   grid: { display: false }
               },
-              y: {
+              y: percent ? {
                   min: 0,
                   max: 100,
                   title: { display: true, text: yTitle },
@@ -124,44 +87,140 @@ $(function() {
                       stepSize: 25,
                       callback: function(value) { return value + '%'; }
                   }
+              } : {
+                  beginAtZero: true,
+                  title: { display: true, text: yTitle }
               }
           },
           plugins: {
               tooltip: {
                   callbacks: {
                       title: function(items) { return 'Round ' + items[0].label; },
-                      label: function(item) { return item.dataset.label + ': ' + Math.round(item.parsed.y) + '%'; }
+                      label: function(item) {
+                        return item.dataset.label + ': ' + (percent
+                          ? Math.round(item.parsed.y) + '%'
+                          : item.parsed.y.toLocaleString(undefined, { maximumFractionDigits: 2 }));
+                      }
                   }
               }
           }
       },
-      plugins: [endLabels]
+      plugins: plugin ? [endLabels, plugin] : [endLabels]
     });
   }
-  var chartDecisionTrajectory = trajectoryChart('chartDecisionTrajectory', '% of decisions', [
-    {'key': 'stag', 'label': 'Stag'},
-    {'key': 'hare', 'label': 'Hare'}
-  ]);
-  var chartOutcomeTrajectory = trajectoryChart('chartOutcomeTrajectory', '% of outcomes', [
-    {'key': 'SS', 'label': 'Stag / Stag'},
-    {'key': 'HS', 'label': 'Hare / Stag'},
-    {'key': 'HH', 'label': 'Hare / Hare'},
-    {'key': 'SH', 'label': 'Stag / Hare'}
-  ]);
-  function addRound(chart, counts, total) {
-    chart.data.labels.push(chart.data.labels.length + 1);
-    counts.forEach(function(count, i) {
-      chart.data.datasets[i].data.push(100 * count / total);
+  function decisionDatasets() {
+    return [lineDataset('Stag', colors.stag), lineDataset('Hare', colors.hare)];
+  }
+  function outcomeDatasets() {
+    return [
+      lineDataset('Stag / Stag', colors.SS),
+      lineDataset('Hare / Stag', colors.HS),
+      lineDataset('Hare / Hare', colors.HH),
+      lineDataset('Stag / Hare', colors.SH)
+    ];
+  }
+  var chartDecisionTrajectory = lineChart('chartDecisionTrajectory', '% of decisions', decisionDatasets(), true);
+  var chartOutcomeTrajectory = lineChart('chartOutcomeTrajectory', '% of outcomes', outcomeDatasets(), true);
+  var chartCumulativeDecisions = lineChart('chartCumulativeDecisions', 'Cumulative % of decisions', decisionDatasets(), true);
+  var chartCumulativeOutcomes = lineChart('chartCumulativeOutcomes', 'Cumulative % of outcomes', outcomeDatasets(), true);
+  var chartCumulativeValue = lineChart('chartCumulativeValue', 'Cumulative value', [], false, {
+    // runs after Chart.js handles each event, so leaving the canvas clears the highlight
+    id: 'highlightUser',
+    afterEvent: function(chart, args) {
+      var active = args.event.type === 'mouseout' ? [] : chart.getActiveElements();
+      highlightUser(chart, active.length ? active[0].datasetIndex : null);
+    }
+  });
+
+  // running totals behind the cumulative charts, cleared on reset
+  var totals = {'decisions': [0, 0], 'outcomes': [0, 0, 0, 0], 'count': 0};
+  function percentages(counts, total) {
+    return counts.map(function(count) {
+      return 100 * count / total;
+    });
+  }
+  function addRound(chart, round, values) {
+    chart.data.labels.push(round);
+    values.forEach(function(value, i) {
+      chart.data.datasets[i].data.push(value);
     });
     chart.update();
   }
-  function clearRounds(chart) {
-    chart.data.labels = [];
+  function addValueRound(label, users) {
+    var chart = chartCumulativeValue;
+    var round = chart.data.labels.length;
+    chart.data.labels.push(label);
+    // rounds without a user (before joining, after leaving) stay empty and show as gaps
     chart.data.datasets.forEach(function(dataset) {
-      dataset.data = [];
+      dataset.data.push(null);
     });
+    users.forEach(function(user) {
+      var dataset = chart.data.datasets.find(function(d) { return d.userId === user.id; });
+      if(!dataset) {
+        // user names arrive HTML-escaped; decode them for the canvas
+        var name = $('<textarea>').html(user.user).text();
+        var reused = chart.data.datasets.filter(function(d) { return d.userName === name; }).length;
+        dataset = lineDataset(reused ? name + ' (' + (reused + 1) + ')' : name, mutedLine);
+        dataset.userId = user.id;
+        dataset.userName = name;
+        dataset.data = new Array(round + 1).fill(null);
+        chart.data.datasets.push(dataset);
+      }
+      dataset.data[round] = user.score;
+    });
+    styleUsers(chart);
     chart.update();
   }
+  function styleUsers(chart) {
+    // up to eight users get their own color and labels; beyond that, gray lines with hover highlight
+    var many = chart.data.datasets.length > userColors.length;
+    chart.data.datasets.forEach(function(dataset, i) {
+      var color = many ? mutedLine : userColors[i];
+      dataset.borderColor = color;
+      dataset.backgroundColor = color;
+      dataset.borderWidth = many ? 1.5 : 2;
+      dataset.pointRadius = many ? 0 : 4;
+      dataset.order = 0;
+    });
+    chart.options.interaction = many ? { mode: 'nearest', intersect: false } : { mode: 'index', intersect: false };
+    chart.options.plugins.legend.display = !many;
+    chart.options.plugins.endLabels = { display: !many };
+    chart.highlighted = null;
+  }
+  function highlightUser(chart, index) {
+    if(chart.data.datasets.length <= userColors.length || chart.highlighted === index) {
+      return;
+    }
+    chart.highlighted = index;
+    chart.data.datasets.forEach(function(dataset, i) {
+      dataset.borderColor = i === index ? userColors[0] : mutedLine;
+      dataset.backgroundColor = dataset.borderColor;
+      dataset.borderWidth = i === index ? 3 : 1.5;
+      dataset.order = i === index ? 0 : 1;
+    });
+    chart.update('none');
+  }
+  function clearRounds() {
+    [chartDecisionTrajectory, chartOutcomeTrajectory, chartCumulativeDecisions, chartCumulativeOutcomes].forEach(function(chart) {
+      chart.data.labels = [];
+      chart.data.datasets.forEach(function(dataset) {
+        dataset.data = [];
+      });
+      chart.update();
+    });
+    chartCumulativeValue.data.labels = [];
+    chartCumulativeValue.data.datasets = [];
+    styleUsers(chartCumulativeValue);
+    chartCumulativeValue.update();
+    totals = {'decisions': [0, 0], 'outcomes': [0, 0, 0, 0], 'count': 0};
+  }
+
+  // per-round / cumulative toggles show one of the two charts in a pane
+  $('#dashboard-content .btn-check').on('change', function(e) {
+    var pane = $(this).closest('.tab-pane');
+    pane.find('[data-view]').addClass('d-none');
+    pane.find('[data-view="' + this.value + '"]').removeClass('d-none');
+  });
 
   var socket = io();
   var loginModal = new bootstrap.Modal('#login');
@@ -185,8 +244,7 @@ $(function() {
   });
   $('#reset-game').on('click', function(e) {
     socket.emit('reset-game');
-    clearRounds(chartDecisionTrajectory);
-    clearRounds(chartOutcomeTrajectory);
+    clearRounds();
   });
   $('#score-game').on('click', function(e) {
     socket.emit('score-game');
@@ -206,11 +264,13 @@ $(function() {
   $('#execute-form').on('submit', function(e) {
     e.preventDefault();
     bootstrap.Modal.getOrCreateInstance('#execute').hide();
+    var delay = Number.parseFloat($('#executeDelay').val()) * 1000;
     execution = {
       'rounds': parseInt($('#executeRounds').val(), 10),
-      'delay': Number.parseFloat($('#executeDelay').val()) * 1000,
+      'delay': delay,
       'round': 0,
-      'nextAt': Date.now(),
+      // count down to the first round too, so players can choose before it is scored
+      'nextAt': Date.now() + delay,
       'timer': null
     };
     $('#execute-game').attr('title', 'Stop remaining rounds');
@@ -230,11 +290,12 @@ $(function() {
     if(!execution) {
       return;
     }
+    // the countdown is to the round shown
     var remaining = execution.nextAt - Date.now();
     $('#execute-game').html('<span class="countdown" aria-hidden="true">'
       + '<span class="spinner-border"></span>'
       + '<span class="countdown-value">' + Math.ceil(remaining / 1000) + '</span></span> '
-      + '<span role="status">Round ' + execution.round + ' of ' + execution.rounds + '</span>');
+      + '<span role="status">Round ' + (execution.round + 1) + ' of ' + execution.rounds + '</span>');
     execution.timer = setTimeout(tickExecution, remaining % 1000 || 1000);
   }
   function stopExecution() {
@@ -242,9 +303,18 @@ $(function() {
     execution = null;
     $('#execute-game').removeAttr('title').text('Execute...');
   }
-  $('#setup-partners').on('click', function(e) {
+  // apply setup as soon as a value is committed (change fires on enter/blur, not every keystroke)
+  $('table.simple input, table.complex input, #probCollab').on('change', function(e) {
     updatePayoffs();
-    socket.emit('setup-partners', {'mode': $('#selectPartners option:selected').val()});
+  });
+  $('#selectPartners').on('change', function(e) {
+    socket.emit('setup-partners', {'mode': $(this).val()});
+    // re-pairing only matters when players are paired with each other
+    $('#repair-partners').prop('disabled', $(this).val() === 'random');
+  });
+  // re-pair everyone, e.g. to include players who joined after pairing
+  $('#repair-partners').on('click', function(e) {
+    socket.emit('setup-partners', {'mode': $('#selectPartners').val()});
   });
   function updatePayoffs() {
     if($('#modeSelect').val() === 'simple') {
@@ -322,19 +392,18 @@ $(function() {
           outcomes[data.users[i].strategy === 'stag' ? 0 : 1][data.users[i].partnerStrategy === 'stag' ? 0 : 1] += 1;
         }
       }
-      chartDecisions.data.datasets[0].data[0] = strategy[0];
-      chartDecisions.data.datasets[0].data[1] = strategy[1];
-      chartDecisions.update();
-      chartOutcomes.data.datasets[0].data[0] = outcomes[0][0];
-      chartOutcomes.data.datasets[0].data[1] = outcomes[1][0];
-      chartOutcomes.data.datasets[0].data[2] = outcomes[1][1];
-      chartOutcomes.data.datasets[0].data[3] = outcomes[0][1];
-      chartOutcomes.update();
-      // reset-game sends users without strategies, so only scored rounds extend the trajectories
+      // reset-game sends users without strategies, so only scored rounds extend the charts
       var total = strategy[0] + strategy[1];
       if(total > 0) {
-        addRound(chartDecisionTrajectory, strategy, total);
-        addRound(chartOutcomeTrajectory, [outcomes[0][0], outcomes[1][0], outcomes[1][1], outcomes[0][1]], total);
+        var outcomeCounts = [outcomes[0][0], outcomes[1][0], outcomes[1][1], outcomes[0][1]];
+        totals.count += total;
+        strategy.forEach(function(count, i) { totals.decisions[i] += count; });
+        outcomeCounts.forEach(function(count, i) { totals.outcomes[i] += count; });
+        addRound(chartDecisionTrajectory, data.round, percentages(strategy, total));
+        addRound(chartOutcomeTrajectory, data.round, percentages(outcomeCounts, total));
+        addRound(chartCumulativeDecisions, data.round, percentages(totals.decisions, totals.count));
+        addRound(chartCumulativeOutcomes, data.round, percentages(totals.outcomes, totals.count));
+        addValueRound(data.round, data.users);
       }
     }
   });

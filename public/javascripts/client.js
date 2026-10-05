@@ -74,18 +74,50 @@ $(function() {
     payoffs = data.payoffs;
     updatePoints(payoffs);
   });
+  var toolNames = {'A': 'Atlatl', 'B': 'Bow', 'C': 'Club', 'D': 'Dog'};
+  function decode(text) {
+    // user names arrive HTML-escaped; decode them and insert as text only
+    return $('<textarea>').html(text).text();
+  }
+  function formatPoints(value) {
+    return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  }
+  function choiceBadge(strategy, design) {
+    return $('<span class="badge">').addClass('badge-' + strategy)
+      .text((strategy === 'stag' ? 'Stag' : 'Hare') + (design ? ' · ' + toolNames[design] : ''));
+  }
+  function partnerChoice(data) {
+    var partner = data.partnerLabel ? decode(data.partnerLabel) : '<Unknown>';
+    return [choiceBadge(data.partnerStrategy), ' ', $('<small class="text-muted">').text(partner)];
+  }
   socket.on('score-updated', function(data) {
-    var partner = data.partnerLabel ? data.partnerLabel : '<Unknown>';
-    $('#log').val(new Date().toLocaleTimeString() + ' | Earned ' + data.delta + ' (total: ' + data.score + '). You selected ' + data.strategy + ', ' + partner + ' selected ' + data.partnerStrategy + '.\n' + $('#log').val());
+    var points = (data.delta < 0 ? '' : '+') + formatPoints(data.delta);
+    // latest round in the card, every round in the history table (newest first)
+    $('#last-round-empty').addClass('d-none');
+    $('#last-round-body').removeClass('d-none');
+    $('#last-round-title').text('Round ' + data.round);
+    $('#last-round-you').empty().append(choiceBadge(data.strategy, data.design));
+    $('#last-round-partner').empty().append(partnerChoice(data));
+    $('#last-round-points').text(points + (Math.abs(data.delta) === 1 ? ' point' : ' points'));
+    $('#last-round-total').text('Total: ' + formatPoints(data.score));
+    $('#history tbody').prepend($('<tr>').append(
+      $('<td>').text(data.round),
+      $('<td>').append(choiceBadge(data.strategy, data.design)),
+      $('<td>').append(partnerChoice(data)),
+      $('<td class="text-end">').text(points),
+      $('<td class="text-end">').text(formatPoints(data.score))
+    ));
     $('#info').text(user + ": " + data.score);
   });
   socket.on('score-reset', function(data) {
-    $('#log').val(new Date().toLocaleTimeString() + ' | Score Reset' + '\n' + $('#log').val());
+    $('#last-round-body').addClass('d-none');
+    $('#last-round-empty').removeClass('d-none').text('Score reset. Waiting for the next round.');
+    $('#history tbody').prepend('<tr><td colspan="5" class="text-center text-muted small">Score reset</td></tr>');
     $('#info').text(user + ": " + 0);
   });
   socket.on('partner-updated', function(data) {
     if(data.partnerLabel) {
-      $('#partner').val(data.partnerLabel);
+      $('#partner').val(decode(data.partnerLabel));
     } else {
       $('#partner').val("<Random Robot>");
     }

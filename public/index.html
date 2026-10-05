@@ -51,15 +51,15 @@
               </div>
               <div class="col-5 rounded col-hare fw-bold bg-light">
                 <div class="row mb-3">
-                  <label for="HH" class="col-4 col-form-label">Hare:</label>
-                  <div class="col-8">
-                    <input type="text" readonly class="form-control-plaintext" id="HH">
-                  </div>
-                </div>
-                <div class="row mb-3">
                   <label for="HS" class="col-4 col-form-label">Stag:</label>
                   <div class="col-8">
                     <input type="text" readonly class="form-control-plaintext" id="HS">
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <label for="HH" class="col-4 col-form-label">Hare:</label>
+                  <div class="col-8">
+                    <input type="text" readonly class="form-control-plaintext" id="HH">
                   </div>
                 </div>
               </div>
@@ -99,8 +99,36 @@
           </form>
         </div>
         <div class="col-lg-6">
-          <label for="text-log">Log</label>
-          <textarea class="form-control" id="log" rows="20" disabled></textarea>
+          <div class="card mb-3" id="last-round" aria-live="polite">
+            <div class="card-body">
+              <p class="text-muted mb-0" id="last-round-empty">No rounds scored yet.</p>
+              <div class="d-none" id="last-round-body">
+                <h2 class="h6 text-muted mb-2" id="last-round-title"></h2>
+                <div class="d-flex flex-wrap column-gap-4 row-gap-1 mb-2">
+                  <div>You: <span id="last-round-you"></span></div>
+                  <div>Partner: <span id="last-round-partner"></span></div>
+                </div>
+                <div class="d-flex justify-content-between align-items-baseline">
+                  <span class="fs-4 fw-bold" id="last-round-points"></span>
+                  <span class="text-muted" id="last-round-total"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="history">
+            <table class="table table-sm align-middle mb-0" id="history">
+              <thead>
+                <tr>
+                  <th scope="col">Round</th>
+                  <th scope="col">You</th>
+                  <th scope="col">Partner</th>
+                  <th scope="col" class="text-end">Points</th>
+                  <th scope="col" class="text-end">Total</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </main>

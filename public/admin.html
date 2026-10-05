@@ -44,48 +44,62 @@
               </div>
             </div>
             <table class="table simple">
-              <tr><th>&nbsp;</th><th>Hare</th><th>Stag</th></tr>
-              <tr>
-                <th>Hare</th>
-                <td><input class="form-control" type="number" id="HH" value="2" step="0.01"></td>
-                <td><input class="form-control" type="number" id="HS" value="3" step="0.01"></td>
-              </tr>
-              <tr>
-                <th>Stag</th>
-                <td><input class="form-control" type="number" id="SH" value="0" step="0.01"></td>
-                <td><input class="form-control" type="number" id="SS" value="4" step="0.01"></td>
-              </tr>
+              <thead>
+                <tr><th>Partner</th><td></td><td></td></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th>Stag</th>
+                  <td><input class="form-control" type="number" id="SS" value="4" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="HS" value="3" step="0.01"></td>
+                </tr>
+                <tr>
+                  <th>Hare</th>
+                  <td><input class="form-control" type="number" id="SH" value="0" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="HH" value="2" step="0.01"></td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr><th>Player</th><th class="text-center">Stag</th><th class="text-center">Hare</th></tr>
+              </tfoot>
             </table>
             <table class="table complex" style="display:none;">
-              <tr><th>&nbsp;</th><th>H/H</th><th>H/S</th><th>S/H</th><th>S/S</th></tr>
-              <tr>
-                <th>Atlatl</th>
-                <td><input class="form-control" type="number" id="A-HH" value="0" step="0.01"></td>
-                <td><input class="form-control" type="number" id="A-HS" value="0" step="0.01"></td>
-                <td><input class="form-control" type="number" id="A-SH" value="0" step="0.01"></td>
-                <td><input class="form-control" type="number" id="A-SS" value="4" step="0.01"></td>
-              </tr>
-              <tr>
-                <th>Bow</th>
-                <td><input class="form-control" type="number" id="B-HH" value="1" step="0.01"></td>
-                <td><input class="form-control" type="number" id="B-HS" value="1" step="0.01"></td>
-                <td><input class="form-control" type="number" id="B-SH" value="1.5" step="0.01"></td>
-                <td><input class="form-control" type="number" id="B-SS" value="3.5" step="0.01"></td>
-              </tr>
-              <tr>
-                <th>Club</th>
-                <td><input class="form-control" type="number" id="C-HH" value="1" step="0.01"></td>
-                <td><input class="form-control" type="number" id="C-HS" value="1" step="0.01"></td>
-                <td><input class="form-control" type="number" id="C-SH" value="0.25" step="0.01"></td>
-                <td><input class="form-control" type="number" id="C-SS" value="3.25" step="0.01"></td>
-              </tr>
-              <tr>
-                <th>Dog</th>
-                <td><input class="form-control" type="number" id="D-HH" value="2" step="0.01"></td>
-                <td><input class="form-control" type="number" id="D-HS" value="3" step="0.01"></td>
-                <td><input class="form-control" type="number" id="D-SH" value="0" step="0.01"></td>
-                <td><input class="form-control" type="number" id="D-SS" value="0" step="0.01"></td>
-              </tr>
+              <thead>
+                <tr><th>Tool</th><th>vs Stag</th><th>vs Hare</th><th>vs Stag</th><th>vs Hare</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th>Atlatl</th>
+                  <td><input class="form-control" type="number" id="A-SS" value="4" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="A-SH" value="0" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="A-HS" value="0" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="A-HH" value="0" step="0.01"></td>
+                </tr>
+                <tr>
+                  <th>Bow</th>
+                  <td><input class="form-control" type="number" id="B-SS" value="3.5" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="B-SH" value="1.5" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="B-HS" value="1" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="B-HH" value="1" step="0.01"></td>
+                </tr>
+                <tr>
+                  <th>Club</th>
+                  <td><input class="form-control" type="number" id="C-SS" value="3.25" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="C-SH" value="0.25" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="C-HS" value="1" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="C-HH" value="1" step="0.01"></td>
+                </tr>
+                <tr>
+                  <th>Dog</th>
+                  <td><input class="form-control" type="number" id="D-SS" value="0" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="D-SH" value="0" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="D-HS" value="3" step="0.01"></td>
+                  <td><input class="form-control" type="number" id="D-HH" value="2" step="0.01"></td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr><th>Player</th><th colspan="2" class="text-center">Stag</th><th colspan="2" class="text-center">Hare</th></tr>
+              </tfoot>
             </table>
             <div class="row mb-3">
               <label for="probCollab" class="col-5 col-form-label">Robot P(Stag):</label>
@@ -94,7 +108,15 @@
               </div>
             </div>
             <div class="row mb-3">
-                <label for="selectPartners" class="col-5 col-form-label">Partners:</label>
+                <div class="col-5 d-flex align-items-center justify-content-between">
+                  <label for="selectPartners" class="col-form-label">Partners:</label>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" id="repair-partners" title="Re-pair players" aria-label="Re-pair players" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
+                      <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41m-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9"/>
+                      <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5 5 0 0 0 8 3M3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9z"/>
+                    </svg>
+                  </button>
+                </div>
                 <div class="col-7">
                   <select class="form-select" id="selectPartners">
                     <option value="random">Random Robot</option>
@@ -104,8 +126,7 @@
                 </div>
             </div>
             <div class="d-flex flex-wrap justify-content-center align-items-center gap-3 my-4">
-              <button type="button" class="btn" id="reset-game">Reset Game</button>
-              <button type="button" class="btn btn-secondary" id="setup-partners">Setup</button>
+              <button type="button" class="btn btn-danger" id="reset-game">Reset Game</button>
               <div class="btn-group" role="group">
                 <button type="button" class="btn btn-primary" id="score-game">Score Game</button>
                 <button type="button" class="btn btn-outline-primary" id="execute-game">Execute...</button>
@@ -119,16 +140,13 @@
               <a class="nav-link active" id="scoreboard-tab" data-bs-toggle="tab" href="#scoreboard" role="tab" aria-controls="scoreboard" aria-selected="true">Scoreboard</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" id="plot1-tab" data-bs-toggle="tab" href="#plotDecisions" role="tab" aria-controls="plotDecisions" aria-selected="false">Decisions</a>
+              <a class="nav-link" id="decisions-tab" data-bs-toggle="tab" href="#decisions" role="tab" aria-controls="decisions" aria-selected="false">Decisions</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" id="plot2-tab" data-bs-toggle="tab" href="#plotOutcomes" role="tab" aria-controls="plotOutcomes" aria-selected="false">Outcomes</a>
+              <a class="nav-link" id="outcomes-tab" data-bs-toggle="tab" href="#outcomes" role="tab" aria-controls="outcomes" aria-selected="false">Outcomes</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" id="plot3-tab" data-bs-toggle="tab" href="#plotDecisionTrajectory" role="tab" aria-controls="plotDecisionTrajectory" aria-selected="false">Decision Trajectory</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" id="plot4-tab" data-bs-toggle="tab" href="#plotOutcomeTrajectory" role="tab" aria-controls="plotOutcomeTrajectory" aria-selected="false">Outcome Trajectory</a>
+              <a class="nav-link" id="cumulative-value-tab" data-bs-toggle="tab" href="#cumulative-value" role="tab" aria-controls="cumulative-value" aria-selected="false">Cumulative Value</a>
             </li>
           </ul>
           <div class="tab-content" id="dashboard-content">
@@ -142,17 +160,32 @@
                 <tbody></tbody>
               </table>
             </div>
-            <div class="tab-pane fade" id="plotDecisions" role="tabpanel" aria-labelledby="plot1-tab">
-              <canvas id="chartDecisions" width="100%"></canvas>
+            <div class="tab-pane fade" id="decisions" role="tabpanel" aria-labelledby="decisions-tab">
+              <div class="d-flex justify-content-end my-2">
+                <div class="btn-group btn-group-sm" role="group" aria-label="Decision values">
+                  <input type="radio" class="btn-check" name="decisions-view" id="decisions-round" value="round" autocomplete="off" checked>
+                  <label class="btn btn-outline-secondary" for="decisions-round">Per round</label>
+                  <input type="radio" class="btn-check" name="decisions-view" id="decisions-cumulative" value="cumulative" autocomplete="off">
+                  <label class="btn btn-outline-secondary" for="decisions-cumulative">Cumulative</label>
+                </div>
+              </div>
+              <div class="chart-trajectory" data-view="round"><canvas id="chartDecisionTrajectory"></canvas></div>
+              <div class="chart-trajectory d-none" data-view="cumulative"><canvas id="chartCumulativeDecisions"></canvas></div>
             </div>
-            <div class="tab-pane fade" id="plotOutcomes" role="tabpanel" aria-labelledby="plot2-tab">
-              <canvas id="chartOutcomes" width="100%"></canvas>
+            <div class="tab-pane fade" id="outcomes" role="tabpanel" aria-labelledby="outcomes-tab">
+              <div class="d-flex justify-content-end my-2">
+                <div class="btn-group btn-group-sm" role="group" aria-label="Outcome values">
+                  <input type="radio" class="btn-check" name="outcomes-view" id="outcomes-round" value="round" autocomplete="off" checked>
+                  <label class="btn btn-outline-secondary" for="outcomes-round">Per round</label>
+                  <input type="radio" class="btn-check" name="outcomes-view" id="outcomes-cumulative" value="cumulative" autocomplete="off">
+                  <label class="btn btn-outline-secondary" for="outcomes-cumulative">Cumulative</label>
+                </div>
+              </div>
+              <div class="chart-trajectory" data-view="round"><canvas id="chartOutcomeTrajectory"></canvas></div>
+              <div class="chart-trajectory d-none" data-view="cumulative"><canvas id="chartCumulativeOutcomes"></canvas></div>
             </div>
-            <div class="tab-pane fade" id="plotDecisionTrajectory" role="tabpanel" aria-labelledby="plot3-tab">
-              <div class="chart-trajectory"><canvas id="chartDecisionTrajectory"></canvas></div>
-            </div>
-            <div class="tab-pane fade" id="plotOutcomeTrajectory" role="tabpanel" aria-labelledby="plot4-tab">
-              <div class="chart-trajectory"><canvas id="chartOutcomeTrajectory"></canvas></div>
+            <div class="tab-pane fade" id="cumulative-value" role="tabpanel" aria-labelledby="cumulative-value-tab">
+              <div class="chart-trajectory"><canvas id="chartCumulativeValue"></canvas></div>
             </div>
           </div>
         </div>
@@ -177,7 +210,7 @@
             <div class="row">
               <label for="executeDelay" class="col-7 col-form-label">Seconds between rounds:</label>
               <div class="col-5">
-                <input class="form-control" type="number" id="executeDelay" min="0" step="any" value="5" required>
+                <input class="form-control" type="number" id="executeDelay" min="0" step="any" value="3" required>
               </div>
             </div>
           </div>

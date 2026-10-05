@@ -60,3 +60,35 @@ input[type=number] {
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
+#dashboard .nav-link {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+}
+.badge-stag {
+  background-color: #dbe8f9;
+  color: #1c5cab;
+}
+.badge-hare {
+  background-color: #fbe3d8;
+  color: #a3401a;
+}
+.history {
+  max-height: 24rem;
+  overflow-y: auto;
+}
+.history thead th {
+  position: sticky;
+  top: 0;
+  background-color: var(--bs-body-bg);
+}
+.history td,
+.history th {
+  font-variant-numeric: tabular-nums;
+}
+table.complex .form-control {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+table.complex th {
+  white-space: nowrap;
+}

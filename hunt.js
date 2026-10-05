@@ -15,6 +15,8 @@ module.exports = function(io) {
   */
 
   var probCollab = 0.5;
+  var nextUserId = 1; // unique per connection, since user names can be reused
+  var round = 0; // rounds scored since the last reset
 
   // credentials are escaped the same way as login input so they compare equal
   var userPasscode = validator.escape(process.env.HUNT_USER_PASSCODE || 'attila');
@@ -41,6 +43,7 @@ module.exports = function(io) {
       return false;
     } else {
       users[userName] = {
+        'id': nextUserId++,
         'socket': socket,
         'partner': null,
         'partnerLabel': '<Random Robot>',
@@ -54,6 +57,7 @@ module.exports = function(io) {
         admin.emit('game-updated', {
           'users': Object.keys(users).map(
             i => ({
+                'id': users[i].id,
                 'user': i,
                 'score': users[i].score
             })
@@ -257,6 +261,7 @@ module.exports = function(io) {
 
     // respond to admin resetting game
     socket.on('reset-game', (data) => {
+      round = 0;
       Object.keys(users).forEach((i) => {
         users[i].score = 0;
         users[i].socket.emit('score-reset');
@@ -266,6 +271,7 @@ module.exports = function(io) {
         admin.emit('score-updated', {
           'users': Object.keys(users).map(
             i => ({
+                'id': users[i].id,
                 'user': i,
                 'score': users[i].score
             })
@@ -278,6 +284,9 @@ module.exports = function(io) {
     socket.on('score-game', (data) => {
       var delta = {};
       var partnerStrategy = {};
+      if(Object.keys(users).length > 0) {
+        round += 1;
+      }
       Object.keys(users).forEach((i) => {
         if(users.hasOwnProperty(users[i].partner)) {
           partnerStrategy[i] = users[users[i].partner].strategy;
@@ -291,9 +300,11 @@ module.exports = function(io) {
         }
         users[i].score += delta[i];
         users[i].socket.emit('score-updated', {
+          'round': round,
           'score': users[i].score,
           'delta': delta[i],
           'strategy': users[i].strategy,
+          'design': payoffs instanceof Array ? null : users[i].design,
           'partnerStrategy': partnerStrategy[i],
           'partnerLabel': users[i].partnerLabel
         });
@@ -301,8 +312,10 @@ module.exports = function(io) {
       if(admin) {
         // return users sorted by decreasing score
         admin.emit('score-updated', {
+          'round': round,
           'users': Object.keys(users).map(
             i => ({
+                'id': users[i].id,
                 'user': i,
                 'delta': delta[i],
                 'score': users[i].score,

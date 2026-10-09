@@ -10,7 +10,7 @@
   },
   "scripts": {
     "postinstall": "node ./node_modules/frontend-dependencies/index.js",
-    "test": "node --test test/static.test.js test/game.test.js test/reconnect.test.js test/admin.test.js",
+    "test": "node --test test/static.test.js test/game.test.js test/reconnect.test.js test/sessions.test.js test/admin.test.js",
     "start": "node ./bin/www"
   },
   "engines": {

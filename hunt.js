@@ -12,10 +12,23 @@ function isProfane(name) {
   return profanity.hasMatch(name) || (spelled !== null && profanity.hasMatch(spelled));
 }
 
+// socket payloads are untrusted: a handler sees anything that isn't an object as empty, and
+// reads only numbers and strings, so values like {"toString": 1} can't throw and stop the server
+function isObject(value) {
+  return value !== null && typeof value === 'object';
+}
+function payload(data) {
+  return isObject(data) ? data : {};
+}
+function number(value) {
+  return typeof value === 'number' || typeof value === 'string' ? Number.parseFloat(value) : NaN;
+}
+
 module.exports = function(io) {
   var admin = null;
   var adminToken = null; // lets the admin page resume after a reload or dropped connection
-  var users = {};
+  // keyed by user name, with no prototype so names like "__proto__" or "hasOwnProperty" are ordinary keys
+  var users = Object.create(null);
   // simple mode: [SS, SH], [HS, HH]; complex mode: the same per tool, {'A': [[...], [...]], ...}
   var payoffs = [[4, 0], [3, 2]];
 
@@ -34,6 +47,15 @@ module.exports = function(io) {
   // credentials are escaped the same way as login input so they compare equal
   var userPasscode = validator.escape(process.env.HUNT_USER_PASSCODE || 'attila');
   var adminPassword = validator.escape(process.env.HUNT_ADMIN_PASSWORD || 'admin');
+
+  function isUser(userName) {
+    return typeof userName === 'string' && Object.hasOwn(users, userName);
+  }
+
+  // whether this socket plays as the user, rather than a tab whose session moved elsewhere
+  function owns(userName, socket) {
+    return isUser(userName) && users[userName].socket === socket;
+  }
 
   function send(userName, event, data) {
     // users waiting to reconnect have no socket
@@ -59,7 +81,7 @@ module.exports = function(io) {
   }
 
   // failed admin sign-ins by client address: {count, since, blockedUntil}
-  var loginFailures = {};
+  var loginFailures = Object.create(null);
   var maxLoginFailures = 5;
   var loginFailureWindow = 60 * 1000;
   var loginLockout = 60 * 1000;
@@ -111,12 +133,21 @@ module.exports = function(io) {
       }
     });
     // remove this user from the application
-    if(users.hasOwnProperty(userName)) {
+    if(isUser(userName)) {
       clearTimeout(users[userName].removeTimer);
       console.log('User ' + userName + ' removed.');
       delete users[userName];
       updateAdmin();
     }
+  }
+
+  function holdUser(userName) {
+    // hold the user's place so they can resume after a reload or dropped connection
+    users[userName].socket = null;
+    // unref: a pending removal alone does not keep the process running
+    users[userName].removeTimer = setTimeout(() => removeUser(userName), reconnectGrace).unref();
+    console.log('User ' + userName + ' disconnected; holding their place for ' + reconnectGrace / 1000 + ' s.');
+    updateAdmin();
   }
 
   function addUser(userName, socket) {
@@ -153,24 +184,27 @@ module.exports = function(io) {
   }
 
   io.on('connection', (socket) => {
-    var user;
+    var user = null;
 
     // respond to user login attempt
     socket.on('login-submit', (data) => {
-      if(user !== null) {
+      data = payload(data);
+      // sign out this socket's user, unless that session has since moved to another tab
+      if(owns(user, socket)) {
         removeUser(user);
       }
+      user = null;
       // authenticate unique user with master pass code
-      if(!data.hasOwnProperty('user') || !data.hasOwnProperty('passcode')) {
+      if(typeof data.user !== 'string' || typeof data.passcode !== 'string') {
           socket.emit('login-auth', {'success': false, 'message': 'Invalid request'});
           return;
       }
-      var userInput = validator.escape(data.user + '');
-      var passcodeInput = validator.escape(data.passcode + '');
+      var userInput = validator.escape(data.user);
+      var passcodeInput = validator.escape(data.passcode);
 
       if(passcodeInput !== userPasscode) {
         socket.emit('login-auth', {'user': userInput, 'success': false, 'message': 'Incorrect pass code'});
-      } else if(isProfane(data.user + '')) {
+      } else if(isProfane(data.user)) {
         socket.emit('login-auth', {'user': userInput, 'success': false, 'message': 'Please choose a different name'});
       } else {
         if(addUser(userInput, socket)) {
@@ -186,10 +220,15 @@ module.exports = function(io) {
 
     // reattach a returning user (page reload or dropped connection) within the grace period
     socket.on('resume', (data) => {
-      var userName = data && data.user + '';
-      if(!users.hasOwnProperty(userName) || !data.token || data.token !== users[userName].token) {
+      data = payload(data);
+      var userName = data.user;
+      if(!isUser(userName) || typeof data.token !== 'string' || data.token !== users[userName].token) {
         socket.emit('resume-failed');
         return;
+      }
+      if(user !== userName && owns(user, socket)) {
+        // this socket played as someone else until now; hold their place too
+        holdUser(user);
       }
       if(users[userName].socket && users[userName].socket !== socket) {
         // the same session opened elsewhere (e.g. a duplicated tab); the newest one wins
@@ -209,8 +248,9 @@ module.exports = function(io) {
 
     // respond to admin login attempt
     socket.on('login-admin', (data) => {
+      data = payload(data);
       // authenticate single admin with master password
-      if(!data.hasOwnProperty('password')) {
+      if(typeof data.password !== 'string') {
           socket.emit('login-auth', {'success': false, 'message': 'Invalid request'});
           return;
       }
@@ -222,7 +262,7 @@ module.exports = function(io) {
         socket.emit('login-auth', {'success': false, 'message': 'Too many attempts. Try again in ' + wait + ' seconds.'});
         return;
       }
-      var passwordInput = validator.escape(data.password + '');
+      var passwordInput = validator.escape(data.password);
       if(passwordInput !== adminPassword) {
         // limit password guessing: a burst of failures blocks this address for a while
         Object.keys(loginFailures).forEach((key) => {
@@ -255,7 +295,8 @@ module.exports = function(io) {
 
     // reattach the admin page (reload or dropped connection); the newest page wins
     socket.on('resume-admin', (data) => {
-      if(!adminToken || !data || data.token !== adminToken) {
+      data = payload(data);
+      if(!adminToken || data.token !== adminToken) {
         socket.emit('resume-failed');
         return;
       }
@@ -274,7 +315,7 @@ module.exports = function(io) {
       if(socket !== admin) {
         return;
       }
-      var remaining = Number.parseFloat(data && data.remaining);
+      var remaining = number(payload(data).remaining);
       countdown = remaining > 0 ? {'endsAt': Date.now() + remaining} : null;
       Object.keys(users).forEach((i) => {
         send(i, 'round-countdown', countdownData());
@@ -284,17 +325,14 @@ module.exports = function(io) {
     // respond to user strategy change
     socket.on('strategy-select', (data) => {
       // ignore a stale tab whose session was resumed elsewhere
-      if(!users.hasOwnProperty(user) || users[user].socket !== socket) {
+      if(!owns(user, socket)) {
         return;
       }
-      if(users.hasOwnProperty(user)
-          && data.hasOwnProperty('strategy')
-          && (data.strategy === 'hare' || data.strategy === 'stag')) {
+      data = payload(data);
+      if(data.strategy === 'hare' || data.strategy === 'stag') {
         users[user].strategy = data.strategy;
       }
-      if(users.hasOwnProperty(user)
-          && data.hasOwnProperty('design')
-          && (data.design === 'A' || data.design === 'B' || data.design === 'C' || data.design === 'D')) {
+      if(data.design === 'A' || data.design === 'B' || data.design === 'C' || data.design === 'D') {
         users[user].design = data.design;
       }
     });
@@ -305,90 +343,91 @@ module.exports = function(io) {
       if(socket !== admin) {
         return;
       }
-      if(data.hasOwnProperty('payoffs')
+      data = payload(data);
+      if(Object.hasOwn(data, 'payoffs')
           && Array.isArray(data.payoffs)
           && data.payoffs.length == 2
           && Array.isArray(data.payoffs[0])
           && data.payoffs[0].length == 2
-          && !isNaN(Number.parseFloat(data.payoffs[0][0]))
-          && !isNaN(Number.parseFloat(data.payoffs[0][1]))
+          && !isNaN(number(data.payoffs[0][0]))
+          && !isNaN(number(data.payoffs[0][1]))
           && Array.isArray(data.payoffs[1])
           && data.payoffs[1].length == 2
-          && !isNaN(Number.parseFloat(data.payoffs[1][0]))
-          && !isNaN(Number.parseFloat(data.payoffs[1][1]))) {
+          && !isNaN(number(data.payoffs[1][0]))
+          && !isNaN(number(data.payoffs[1][1]))) {
         payoffs = [
-          [Number.parseFloat(data.payoffs[0][0]), Number.parseFloat(data.payoffs[0][1])],
-          [Number.parseFloat(data.payoffs[1][0]), Number.parseFloat(data.payoffs[1][1])]
+          [number(data.payoffs[0][0]), number(data.payoffs[0][1])],
+          [number(data.payoffs[1][0]), number(data.payoffs[1][1])]
         ];
-      } else if(data.hasOwnProperty('payoffs')
-          && data.payoffs.hasOwnProperty('A')
+      } else if(Object.hasOwn(data, 'payoffs')
+          && isObject(data.payoffs) && Object.hasOwn(data.payoffs, 'A')
           && Array.isArray(data.payoffs.A)
           && data.payoffs.A.length == 2
           && Array.isArray(data.payoffs.A[0])
           && data.payoffs.A[0].length == 2
-          && !isNaN(Number.parseFloat(data.payoffs.A[0][0]))
-          && !isNaN(Number.parseFloat(data.payoffs.A[0][1]))
+          && !isNaN(number(data.payoffs.A[0][0]))
+          && !isNaN(number(data.payoffs.A[0][1]))
           && Array.isArray(data.payoffs.A[1])
           && data.payoffs.A[1].length == 2
-          && !isNaN(Number.parseFloat(data.payoffs.A[1][0]))
-          && !isNaN(Number.parseFloat(data.payoffs.A[1][1]))
-          && data.payoffs.hasOwnProperty('B')
+          && !isNaN(number(data.payoffs.A[1][0]))
+          && !isNaN(number(data.payoffs.A[1][1]))
+          && Object.hasOwn(data.payoffs, 'B')
           && Array.isArray(data.payoffs.B)
           && data.payoffs.B.length == 2
           && Array.isArray(data.payoffs.B[0])
           && data.payoffs.B[0].length == 2
-          && !isNaN(Number.parseFloat(data.payoffs.B[0][0]))
-          && !isNaN(Number.parseFloat(data.payoffs.B[0][1]))
+          && !isNaN(number(data.payoffs.B[0][0]))
+          && !isNaN(number(data.payoffs.B[0][1]))
           && Array.isArray(data.payoffs.B[1])
           && data.payoffs.B[1].length == 2
-          && !isNaN(Number.parseFloat(data.payoffs.B[1][0]))
-          && !isNaN(Number.parseFloat(data.payoffs.B[1][1]))
-          && data.payoffs.hasOwnProperty('C')
+          && !isNaN(number(data.payoffs.B[1][0]))
+          && !isNaN(number(data.payoffs.B[1][1]))
+          && Object.hasOwn(data.payoffs, 'C')
           && Array.isArray(data.payoffs.C)
           && data.payoffs.C.length == 2
           && Array.isArray(data.payoffs.C[0])
           && data.payoffs.C[0].length == 2
-          && !isNaN(Number.parseFloat(data.payoffs.C[0][0]))
-          && !isNaN(Number.parseFloat(data.payoffs.C[0][1]))
+          && !isNaN(number(data.payoffs.C[0][0]))
+          && !isNaN(number(data.payoffs.C[0][1]))
           && Array.isArray(data.payoffs.C[1])
           && data.payoffs.C[1].length == 2
-          && !isNaN(Number.parseFloat(data.payoffs.C[1][0]))
-          && !isNaN(Number.parseFloat(data.payoffs.C[1][1]))
-          && data.payoffs.hasOwnProperty('D')
+          && !isNaN(number(data.payoffs.C[1][0]))
+          && !isNaN(number(data.payoffs.C[1][1]))
+          && Object.hasOwn(data.payoffs, 'D')
           && Array.isArray(data.payoffs.D)
           && data.payoffs.D.length == 2
           && Array.isArray(data.payoffs.D[0])
           && data.payoffs.D[0].length == 2
-          && !isNaN(Number.parseFloat(data.payoffs.D[0][0]))
-          && !isNaN(Number.parseFloat(data.payoffs.D[0][1]))
+          && !isNaN(number(data.payoffs.D[0][0]))
+          && !isNaN(number(data.payoffs.D[0][1]))
           && Array.isArray(data.payoffs.D[1])
           && data.payoffs.D[1].length == 2
-          && !isNaN(Number.parseFloat(data.payoffs.D[1][0]))
-          && !isNaN(Number.parseFloat(data.payoffs.D[1][1]))) {
+          && !isNaN(number(data.payoffs.D[1][0]))
+          && !isNaN(number(data.payoffs.D[1][1]))) {
         payoffs = {
           'A': [
-            [Number.parseFloat(data.payoffs.A[0][0]), Number.parseFloat(data.payoffs.A[0][1])],
-            [Number.parseFloat(data.payoffs.A[1][0]), Number.parseFloat(data.payoffs.A[1][1])]
+            [number(data.payoffs.A[0][0]), number(data.payoffs.A[0][1])],
+            [number(data.payoffs.A[1][0]), number(data.payoffs.A[1][1])]
           ],
           'B': [
-            [Number.parseFloat(data.payoffs.B[0][0]), Number.parseFloat(data.payoffs.B[0][1])],
-            [Number.parseFloat(data.payoffs.B[1][0]), Number.parseFloat(data.payoffs.B[1][1])]
+            [number(data.payoffs.B[0][0]), number(data.payoffs.B[0][1])],
+            [number(data.payoffs.B[1][0]), number(data.payoffs.B[1][1])]
           ],
           'C': [
-            [Number.parseFloat(data.payoffs.C[0][0]), Number.parseFloat(data.payoffs.C[0][1])],
-            [Number.parseFloat(data.payoffs.C[1][0]), Number.parseFloat(data.payoffs.C[1][1])]
+            [number(data.payoffs.C[0][0]), number(data.payoffs.C[0][1])],
+            [number(data.payoffs.C[1][0]), number(data.payoffs.C[1][1])]
           ],
           'D': [
-            [Number.parseFloat(data.payoffs.D[0][0]), Number.parseFloat(data.payoffs.D[0][1])],
-            [Number.parseFloat(data.payoffs.D[1][0]), Number.parseFloat(data.payoffs.D[1][1])]
+            [number(data.payoffs.D[0][0]), number(data.payoffs.D[0][1])],
+            [number(data.payoffs.D[1][0]), number(data.payoffs.D[1][1])]
           ],
         };
       }
-      if(data.hasOwnProperty('probCollab')
-          && !isNaN(Number.parseFloat(data.probCollab))
-          && Number.parseFloat(data.probCollab) >= 0
-          && Number.parseFloat(data.probCollab) <= 1) {
-        probCollab = Number.parseFloat(data.probCollab);
+      if(Object.hasOwn(data, 'probCollab')
+          && !isNaN(number(data.probCollab))
+          && number(data.probCollab) >= 0
+          && number(data.probCollab) <= 1) {
+        probCollab = number(data.probCollab);
       }
       Object.keys(users).forEach((i) => {
         send(i, 'payoffs-changed', { 'payoffs': payoffs });
@@ -401,17 +440,18 @@ module.exports = function(io) {
       if(socket !== admin) {
         return;
       }
-      if(data.hasOwnProperty('mode') && ['random', 'paired', 'hidden'].includes(data.mode)) {
+      data = payload(data);
+      if(Object.hasOwn(data, 'mode') && ['random', 'paired', 'hidden'].includes(data.mode)) {
         partnerMode = data.mode;
       }
-      if(data.hasOwnProperty('mode') && data.mode === 'random') {
+      if(Object.hasOwn(data, 'mode') && data.mode === 'random') {
         // pair each user with random robot
         Object.keys(users).forEach((i) => {
           users[i].partner = null;
           users[i].partnerLabel = '<Random Robot>';
           send(i, 'partner-updated', { 'partnerLabel': users[i].partnerLabel });
         });
-      } else if(data.hasOwnProperty('mode')
+      } else if(Object.hasOwn(data, 'mode')
           && (data.mode === 'paired' || data.mode === 'hidden')) {
         // pair each connected user with a random connected user
         Object.keys(users).forEach((i) => {
@@ -464,8 +504,8 @@ module.exports = function(io) {
       if(socket !== admin) {
         return;
       }
-      var delta = {};
-      var partnerStrategy = {};
+      var delta = Object.create(null); // keyed by user name, like users
+      var partnerStrategy = Object.create(null);
       // users waiting to reconnect sit this round out
       var players = Object.keys(users).filter(i => users[i].socket);
       if(players.length > 0) {
@@ -475,7 +515,7 @@ module.exports = function(io) {
       players.forEach((i) => {
         var partner = users[i].partner;
         var partnerLabel = users[i].partnerLabel;
-        if(users.hasOwnProperty(partner) && users[partner].socket) {
+        if(isUser(partner) && users[partner].socket) {
           partnerStrategy[i] = users[partner].strategy;
         } else {
           // a random robot stands in for a missing partner
@@ -501,7 +541,7 @@ module.exports = function(io) {
         };
         users[i].history.push(result);
         send(i, 'score-updated', result);
-        var human = users.hasOwnProperty(partner) && users[partner].socket;
+        var human = isUser(partner) && users[partner].socket;
         results.push({
           'game': game,
           'round': round,
@@ -558,14 +598,8 @@ module.exports = function(io) {
         Object.keys(users).forEach((i) => {
           send(i, 'round-countdown', countdownData());
         });
-      } else if(users.hasOwnProperty(user) && users[user].socket === socket) {
-        // hold the user's place so they can resume after a reload or dropped connection
-        var userName = user;
-        users[userName].socket = null;
-        // unref: a pending removal alone does not keep the process running
-        users[userName].removeTimer = setTimeout(() => removeUser(userName), reconnectGrace).unref();
-        console.log('User ' + userName + ' disconnected; holding their place for ' + reconnectGrace / 1000 + ' s.');
-        updateAdmin();
+      } else if(owns(user, socket)) {
+        holdUser(user);
       }
     });
   });

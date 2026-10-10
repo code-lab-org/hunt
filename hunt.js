@@ -12,6 +12,8 @@ function isProfane(name) {
   return profanity.hasMatch(name) || (spelled !== null && profanity.hasMatch(spelled));
 }
 
+var maxNameLength = 32; // matches the maxlength of the sign-in form's name field
+
 // socket payloads are untrusted: a handler sees anything that isn't an object as empty, and
 // reads only numbers and strings, so values like {"toString": 1} can't throw and stop the server
 function isObject(value) {
@@ -198,6 +200,11 @@ module.exports = function(io) {
       if(typeof data.user !== 'string' || typeof data.passcode !== 'string') {
           socket.emit('login-auth', {'success': false, 'message': 'Invalid request'});
           return;
+      }
+      if(data.user.length > maxNameLength) {
+        // names are stored and sent with every update and round; long ones could exhaust memory
+        socket.emit('login-auth', {'success': false, 'message': 'Please choose a name of at most ' + maxNameLength + ' characters'});
+        return;
       }
       var userInput = validator.escape(data.user);
       var passcodeInput = validator.escape(data.passcode);

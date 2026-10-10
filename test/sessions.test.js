@@ -76,6 +76,16 @@ test('names that match object internals are ordinary names', async () => {
   assert.strictEqual((await result).partnerStrategy, 'hare', 'the robot never hunts stag');
 });
 
+test('names are limited to 32 characters before escaping', async () => {
+  assert.ok((await signInPlayer(app, 'n'.repeat(32))).auth.success);
+  assert.ok((await signInPlayer(app, '<'.repeat(32))).auth.success, 'escaping can make the stored name longer');
+  for (const name of ['m'.repeat(33), 'm'.repeat(999000)]) {
+    const { auth } = await signInPlayer(app, name);
+    assert.strictEqual(auth.message, 'Please choose a name of at most 32 characters');
+    assert.strictEqual(auth.user, undefined, 'the long name is not echoed back');
+  }
+});
+
 test('malformed payloads are ignored without stopping the server', async () => {
   const weird = { toString: 1, valueOf: 1 };
   const stranger = await app.connect();
